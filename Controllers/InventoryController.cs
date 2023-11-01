@@ -30,9 +30,9 @@ namespace asp_net_web_api.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetInventoryItem(int id)
+        public IActionResult GetInventoryItem(int id)
         {
-            var item = await _inventoryService.getInventoryItem(id);
+            var item =  _inventoryService.getInventoryItem(id);
 
             if (item == null){
                 return NotFound("The requested item not found");
@@ -43,16 +43,16 @@ namespace asp_net_web_api.API.Controllers
         }
 
         [HttpPost]
-        public  async Task<ActionResult<InventoryItem>> AddInventoryItem(InventoryItem item)
+        public  ActionResult<InventoryItem> AddInventoryItem(InventoryItem item)
         {
            
-            var newItem = await _inventoryService.addInventoryItem(item);
+            var newItem = _inventoryService.addInventoryItem(item);
             _logger.LogInformation("CreateInventoryItem invoked");
             return CreatedAtAction("GetInventoryItem",new { id = item.Id }, newItem);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteInventoryItem(int id)
+        public IActionResult DeleteInventoryItem(int id)
         {
             var item = _inventoryService.deleteInventoryItem(id);
 
@@ -66,13 +66,11 @@ namespace asp_net_web_api.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<InventoryItem>> UpdateInventoryItem(int id, InventoryItem item){
+        public ActionResult<InventoryItem> UpdateInventoryItem(int id, InventoryItem item){
             if (id != item.Id) return BadRequest();
-            var updatedItem = await _inventoryService.updateInventoryItem(id, item); 
+            var updatedItem =  _inventoryService.updateInventoryItem(id, item); 
             if(updatedItem==null) return NotFound();
-
             _logger.LogInformation("UpdateInventoryItem invoked");
-            
             return Ok(updatedItem);
         }
     }
