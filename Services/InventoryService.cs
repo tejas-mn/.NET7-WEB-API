@@ -7,15 +7,15 @@ namespace asp_net_web_api.API.Services
 {
     public class InventoryService : IInventoryService
     {
-        private UnitOfWork _unitOfWork;
+        private IUnitOfWork _unitOfWork;
 
-        public InventoryService(UnitOfWork unitOfWork){
+        public InventoryService(IUnitOfWork unitOfWork){
             _unitOfWork = unitOfWork;
         }
 
         public List<InventoryItem> getInventoryItems(ProductQueryParameters queryParameters)
         {
-            IQueryable<InventoryItem> inventoryItems = (IQueryable<InventoryItem>)_unitOfWork.ItemsRepository.GetAll();
+            IQueryable<InventoryItem> inventoryItems = _unitOfWork.ItemsRepository.GetAll().AsQueryable();
 
             if(queryParameters.MinPrice != null){
                 inventoryItems = inventoryItems.Where(p => p.Price >= queryParameters.MinPrice);
@@ -74,11 +74,13 @@ namespace asp_net_web_api.API.Services
             // var item = await _context.InventoryItems.FindAsync(id);
 
             var item = _unitOfWork.ItemsRepository.GetById(id);
+
+            if (item == null){
+                return null;
+            }
+            
             _unitOfWork.ItemsRepository.Delete(item);
 
-            // if (item == null){
-            //     return null;
-            // }
 
             // _context.InventoryItems.Remove(item);
 

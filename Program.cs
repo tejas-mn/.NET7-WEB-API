@@ -17,9 +17,11 @@ builder.Services.AddLogging(options => {
 
 //builder.Services.AddTransient<IRepository<InventoryItem>, ItemRepository>();
 //builder.Services.AddScoped<IInventoryService,InventoryService>();
-builder.Services.AddScoped<InventoryService>();
+
 builder.Services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddTransient<IItemRepository, ItemRepository>();
+builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
+builder.Services.AddTransient<IInventoryService, InventoryService>();
 
 builder.Services.AddMvc(options => {
    options.SuppressAsyncSuffixInActionNames = false;

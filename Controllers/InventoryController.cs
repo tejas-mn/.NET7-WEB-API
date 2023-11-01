@@ -10,11 +10,11 @@ namespace asp_net_web_api.API.Controllers
     [ApiController]
     public class InventoryController : ControllerBase
     {
-        private readonly InventoryService _inventoryService;
+        private readonly IInventoryService _inventoryService;
         private readonly AppDbContext _context;
         private readonly ILogger<InventoryController> _logger;
 
-        public InventoryController(InventoryService inventoryService, AppDbContext context, ILogger<InventoryController> logger){
+        public InventoryController(IInventoryService inventoryService, AppDbContext context, ILogger<InventoryController> logger){
             _inventoryService = inventoryService;
             _context = context;
             _logger = logger;
