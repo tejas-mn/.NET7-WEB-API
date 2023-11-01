@@ -4,8 +4,10 @@ namespace asp_net_web_api.API.Respository
 {
     public interface IGenericRepository<T> where T : class 
     {
+        IQueryable<T> Table { get; }  
+
         IEnumerable<T> GetAll();
-        T GetById(int id);
+        T? GetById(int id);
         void Add(T entity);
         void Update(T entity);
         void Delete(T entity);

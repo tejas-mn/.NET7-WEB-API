@@ -50,9 +50,10 @@ namespace asp_net_web_api.API.Services
 
         public InventoryItem? getInventoryItem(int id)
         {
+            
              return  _unitOfWork.ItemsRepository.GetById(id);
+            //  return _unitOfWork.ItemsRepository.Table.Include(i=>i.Category).FirstOrDefault(i=>i.Id==id);
 
-            //  Include(i=>i.Category).FirstOrDefaultAsync(i=>i.Id==id);
         }
 
         public InventoryItem? addInventoryItem(InventoryItem item)
@@ -71,8 +72,6 @@ namespace asp_net_web_api.API.Services
         
         public  InventoryItem? deleteInventoryItem(int id)
         {
-            // var item = await _context.InventoryItems.FindAsync(id);
-
             var item = _unitOfWork.ItemsRepository.GetById(id);
 
             if (item == null){
@@ -80,9 +79,6 @@ namespace asp_net_web_api.API.Services
             }
             
             _unitOfWork.ItemsRepository.Delete(item);
-
-
-            // _context.InventoryItems.Remove(item);
 
             _unitOfWork.Complete();
 
@@ -94,14 +90,12 @@ namespace asp_net_web_api.API.Services
             
             _unitOfWork.ItemsRepository.Update(item);
             
-            // var itemToUpdate = _context.InventoryItems.Find(id);
             var itemToUpdate = _unitOfWork.ItemsRepository.GetById(id);
         
             try{
                 _unitOfWork.Complete();
-                // await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException){
+            catch (DbUpdateException){
                 if (itemToUpdate == null){
                     return null;
                 }
@@ -110,7 +104,6 @@ namespace asp_net_web_api.API.Services
                 }
             }
 
-            // var updatedItem = _context.InventoryItems.Find(id);
             var updatedItem = _unitOfWork.ItemsRepository.GetById(id);
             return updatedItem;
         }
