@@ -1,13 +1,12 @@
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Respository;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace asp_net_web_api.API.Services
 {
     public class InventoryService : IInventoryService
     {
-        private IUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
 
         public InventoryService(IUnitOfWork unitOfWork){
             _unitOfWork = unitOfWork;

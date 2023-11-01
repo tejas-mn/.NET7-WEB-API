@@ -1,8 +1,6 @@
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace asp_net_web_api.API.Controllers
 {
@@ -11,14 +9,11 @@ namespace asp_net_web_api.API.Controllers
     public class InventoryController : ControllerBase
     {
         private readonly IInventoryService _inventoryService;
-        private readonly AppDbContext _context;
         private readonly ILogger<InventoryController> _logger;
 
-        public InventoryController(IInventoryService inventoryService, AppDbContext context, ILogger<InventoryController> logger){
+        public InventoryController(IInventoryService inventoryService, ILogger<InventoryController> logger){
             _inventoryService = inventoryService;
-            _context = context;
             _logger = logger;
-            _context.Database.EnsureCreated();
         }
 
         [HttpGet]
@@ -33,11 +28,7 @@ namespace asp_net_web_api.API.Controllers
         public IActionResult GetInventoryItem(int id)
         {
             var item =  _inventoryService.getInventoryItem(id);
-
-            if (item == null){
-                return NotFound("The requested item not found");
-            }
-            
+            if (item == null) return NotFound("The requested item not found");
             _logger.LogInformation("GetInventoryItem invoked");
             return Ok(item);
         }
@@ -45,7 +36,6 @@ namespace asp_net_web_api.API.Controllers
         [HttpPost]
         public  ActionResult<InventoryItem> AddInventoryItem(InventoryItem item)
         {
-           
             var newItem = _inventoryService.addInventoryItem(item);
             _logger.LogInformation("CreateInventoryItem invoked");
             return CreatedAtAction("GetInventoryItem",new { id = item.Id }, newItem);
@@ -55,13 +45,8 @@ namespace asp_net_web_api.API.Controllers
         public IActionResult DeleteInventoryItem(int id)
         {
             var item = _inventoryService.deleteInventoryItem(id);
-
-            if (item == null){
-                return NotFound();
-            }
-
+            if (item == null) return NotFound();
             _logger.LogInformation("DeleteInventoryItem invoked");
-
             return NoContent();
         }
 
