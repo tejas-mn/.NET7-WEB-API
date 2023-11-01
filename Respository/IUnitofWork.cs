@@ -1,10 +1,10 @@
 
-using asp_net_web_api.API.Respository;
+namespace asp_net_web_api.API.Respository{
+    public interface IUnitOfWork : IDisposable{
 
-public interface IUnitOfWork : IDisposable{
+        // IItemRepository ItemsRepository { get; }
+    
+        int Complete();
 
-    // IItemRepository ItemsRepository { get; }
- 
-    int Complete();
-
+    }
 }

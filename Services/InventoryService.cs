@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace asp_net_web_api.API.Services
 {
-    public class InventoryService 
+    public class InventoryService : IInventoryService
     {
         private UnitOfWork _unitOfWork;
 

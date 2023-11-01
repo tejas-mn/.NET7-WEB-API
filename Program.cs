@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
+using asp_net_web_api.API.Respository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,8 +18,8 @@ builder.Services.AddLogging(options => {
 //builder.Services.AddTransient<IRepository<InventoryItem>, ItemRepository>();
 //builder.Services.AddScoped<IInventoryService,InventoryService>();
 builder.Services.AddScoped<InventoryService>();
-services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-services.AddTransient<IItemRepository, ItemRepository>();
+builder.Services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddTransient<IItemRepository, ItemRepository>();
 
 builder.Services.AddMvc(options => {
    options.SuppressAsyncSuffixInActionNames = false;
