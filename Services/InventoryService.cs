@@ -1,3 +1,4 @@
+using System;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Respository;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,16 @@ namespace asp_net_web_api.API.Services
             
             if(!string.IsNullOrEmpty(queryParameters.Category)){
                 inventoryItems = inventoryItems.Where(p => p.Category!=null && p.Category.Name.ToLower().Contains(queryParameters.Category.ToLower()));
+            }
+
+            if(!string.IsNullOrEmpty(queryParameters.SortBy)){
+                if (typeof(InventoryItem).GetProperty(queryParameters.SortBy) != null)
+                {
+                    inventoryItems = inventoryItems.OrderByCustom(
+                        queryParameters.SortBy,
+                        queryParameters.SortOrder
+                    );
+                }
             }
 
             inventoryItems = inventoryItems
