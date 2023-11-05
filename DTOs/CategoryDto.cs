@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-using asp_net_web_api.API.Models;
 
 namespace asp_net_web_api.API.DTO
 {

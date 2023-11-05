@@ -81,7 +81,7 @@ namespace asp_net_web_api.API.Services
         {
             
             var inventoryItem = _unitOfWork.ItemsRepository.GetById(id);
-            if(inventoryItem==null) return new ItemDto();
+            if(inventoryItem==null) return null;
             var category = _unitOfWork.CategoryRepository.GetById((int)inventoryItem.CategoryId);
 
             return new ItemDto(){
@@ -93,13 +93,24 @@ namespace asp_net_web_api.API.Services
                 Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new()
             };
 
-            //  return _unitOfWork.ItemsRepository.Table.Include(i=>i.Category).FirstOrDefault(i=>i.Id==id);
-
         }
 
-        public InventoryItem? addInventoryItem(InventoryItem item)
+        public CreateItemResponseDto? addInventoryItem(CreateItemRequestDto itemRequest)
         {
-            try{
+            var category = _unitOfWork.CategoryRepository.GetById((int)itemRequest.CategoryId) 
+                ?? throw new DbUpdateException("Category Not Found! Provide the correct category id");
+            
+            try
+            {
+                InventoryItem item = new(){
+                    Id = itemRequest.Id, 
+                    Name = itemRequest.Name,
+                    Description = itemRequest.Description,
+                    Price = itemRequest.Price,
+                    Sku = itemRequest.Sku,
+                    CategoryId = itemRequest.CategoryId,
+                    IsAvailable = itemRequest.IsAvailable,
+                };
                 _unitOfWork.ItemsRepository.Add(item);
                 _unitOfWork.Complete();
             }
@@ -107,7 +118,19 @@ namespace asp_net_web_api.API.Services
                 throw ex;
             }
 
-            return item;
+            CreateItemResponseDto response = new(){
+                Id = itemRequest.Id,
+                Name = itemRequest.Name,
+                Description = itemRequest.Description,
+                Price = itemRequest.Price,
+                CategoryId = itemRequest.CategoryId,
+                Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
+                IsAvailable = itemRequest.IsAvailable,
+                CreatedAt = DateTime.Now,
+                ModifiedAt = DateTime.Now
+            };
+
+            return response;
         }
         
         

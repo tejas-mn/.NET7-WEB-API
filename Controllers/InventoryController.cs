@@ -1,3 +1,4 @@
+using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +18,7 @@ namespace asp_net_web_api.API.Controllers
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<InventoryItem>> GetInventoryItems([FromQuery] ProductQueryParameters queryParameters)
+        public IActionResult GetInventoryItems([FromQuery] ProductQueryParameters queryParameters)
         {
             var inventoryItems = _inventoryService.getInventoryItems(queryParameters);
             _logger.LogInformation("GetInventoryItems invoked");
@@ -34,11 +35,11 @@ namespace asp_net_web_api.API.Controllers
         }
 
         [HttpPost]
-        public  ActionResult<InventoryItem> AddInventoryItem(InventoryItem item)
+        public  ActionResult<CreateItemResponseDto> AddInventoryItem(CreateItemRequestDto item)
         {
             var newItem = _inventoryService.addInventoryItem(item);
             _logger.LogInformation("CreateInventoryItem invoked");
-            return CreatedAtAction("GetInventoryItem",new { id = item.Id }, newItem);
+            return Ok(newItem);
         }
 
         [HttpDelete("{id}")]

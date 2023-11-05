@@ -1,6 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
-using asp_net_web_api.API.Models;
 
 namespace asp_net_web_api.API.DTO
 {
@@ -19,5 +16,6 @@ namespace asp_net_web_api.API.DTO
         public int CategoryId { get; set; }
 
         public CategoryDto? Category { get; set; }
+
     }
 }

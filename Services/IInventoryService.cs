@@ -9,7 +9,7 @@ namespace asp_net_web_api.API.Services
     {
          public List<ItemDto> getInventoryItems(ProductQueryParameters queryParameters);
          public ItemDto? getInventoryItem(int id);
-         public InventoryItem? addInventoryItem(InventoryItem item);
+         public CreateItemResponseDto? addInventoryItem(CreateItemRequestDto itemRequest);
          public InventoryItem? deleteInventoryItem(int id);
          public InventoryItem? updateInventoryItem(int id, InventoryItem item);
     }
