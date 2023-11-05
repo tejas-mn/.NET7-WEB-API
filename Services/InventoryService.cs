@@ -68,7 +68,9 @@ namespace asp_net_web_api.API.Services
                     Description = item.Description,
                     Price = item.Price,
                     CategoryId = item.CategoryId,
-                    Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new()
+                    Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
+                    CreatedAt = item.CreatedAt,
+                    ModifiedAt = item.ModifiedAt
                 };
 
                 items.Add(it);
@@ -90,7 +92,9 @@ namespace asp_net_web_api.API.Services
                 Description = inventoryItem.Description,
                 Price = inventoryItem.Price,
                 CategoryId = inventoryItem.CategoryId,
-                Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new()
+                Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
+                CreatedAt = inventoryItem.CreatedAt,
+                ModifiedAt = inventoryItem.ModifiedAt
             };
 
         }
@@ -110,6 +114,8 @@ namespace asp_net_web_api.API.Services
                     Sku = itemRequest.Sku,
                     CategoryId = itemRequest.CategoryId,
                     IsAvailable = itemRequest.IsAvailable,
+                    CreatedAt = DateTime.Now,
+                    ModifiedAt = DateTime.Now
                 };
                 _unitOfWork.ItemsRepository.Add(item);
                 _unitOfWork.Complete();
@@ -137,15 +143,9 @@ namespace asp_net_web_api.API.Services
         public  InventoryItem? deleteInventoryItem(int id)
         {
             var item = _unitOfWork.ItemsRepository.GetById(id);
-
-            if (item == null){
-                return null;
-            }
-            
+            if(item == null) return null;
             _unitOfWork.ItemsRepository.Delete(item);
-
             _unitOfWork.Complete();
-
             return item;
         }
 
@@ -153,7 +153,6 @@ namespace asp_net_web_api.API.Services
             if (id != item.Id) return null;
             
             _unitOfWork.ItemsRepository.Update(item);
-            
             var itemToUpdate = _unitOfWork.ItemsRepository.GetById(id);
         
             try{
@@ -171,6 +170,5 @@ namespace asp_net_web_api.API.Services
             var updatedItem = _unitOfWork.ItemsRepository.GetById(id);
             return updatedItem;
         }
-
     }
 }

@@ -1,7 +1,8 @@
+using System.Text.Json.Serialization;
 
 namespace asp_net_web_api.API.DTO
 {
-    public class ItemDto
+    public class ItemDto : BaseDto
     {
         public int Id { get; set; }
 
@@ -16,6 +17,12 @@ namespace asp_net_web_api.API.DTO
         public int CategoryId { get; set; }
 
         public CategoryDto? Category { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public DateTime? CreatedAt { get ; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public DateTime? ModifiedAt { get; set; }
 
     }
 }
