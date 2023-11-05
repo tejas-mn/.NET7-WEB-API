@@ -6,10 +6,12 @@ namespace  asp_net_web_api.API.Respository
     {
         private readonly AppDbContext _context;
         public IItemRepository ItemsRepository {get; private set;}
+        public ICategoryRepository CategoryRepository {get; private set;}
 
         public UnitOfWork(AppDbContext context){
             _context = context;
             ItemsRepository = new ItemRepository(_context);
+            CategoryRepository = new CategoryRepository(_context);
         }
 
         public int Complete()

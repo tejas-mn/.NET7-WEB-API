@@ -1,4 +1,6 @@
+using System.Runtime.CompilerServices;
 using System;
+using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Respository;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +15,7 @@ namespace asp_net_web_api.API.Services
             _unitOfWork = unitOfWork;
         }
 
-        public List<InventoryItem> getInventoryItems(ProductQueryParameters queryParameters)
+        public List<ItemDto> getInventoryItems(ProductQueryParameters queryParameters)
         {
             IQueryable<InventoryItem> inventoryItems = _unitOfWork.ItemsRepository.GetAll().AsQueryable();
 
@@ -55,13 +57,42 @@ namespace asp_net_web_api.API.Services
                 .Skip(queryParameters.Size * (queryParameters.Page - 1))
                 .Take(queryParameters.Size);
 
-            return  inventoryItems.Include(i => i.Category).ToList();
+            List<ItemDto> items = new();
+
+            foreach (var item in inventoryItems)
+            {
+                var category = _unitOfWork.CategoryRepository.GetById(item.CategoryId);
+                ItemDto it = new ItemDto(){
+                    Id = item.Id,
+                    Name = item.Name,
+                    Description = item.Description,
+                    Price = item.Price,
+                    CategoryId = item.CategoryId,
+                    Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new()
+                };
+
+                items.Add(it);
+            }
+
+            return  items;
         }
 
-        public InventoryItem? getInventoryItem(int id)
+        public ItemDto? getInventoryItem(int id)
         {
             
-             return  _unitOfWork.ItemsRepository.GetById(id);
+            var inventoryItem = _unitOfWork.ItemsRepository.GetById(id);
+            if(inventoryItem==null) return new ItemDto();
+            var category = _unitOfWork.CategoryRepository.GetById((int)inventoryItem.CategoryId);
+
+            return new ItemDto(){
+                Id = inventoryItem.Id,
+                Name = inventoryItem.Name,
+                Description = inventoryItem.Description,
+                Price = inventoryItem.Price,
+                CategoryId = inventoryItem.CategoryId,
+                Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new()
+            };
+
             //  return _unitOfWork.ItemsRepository.Table.Include(i=>i.Category).FirstOrDefault(i=>i.Id==id);
 
         }
