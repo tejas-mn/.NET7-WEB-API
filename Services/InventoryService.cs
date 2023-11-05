@@ -1,4 +1,6 @@
+using System.Runtime.CompilerServices;
 using System;
+using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Respository;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +15,7 @@ namespace asp_net_web_api.API.Services
             _unitOfWork = unitOfWork;
         }
 
-        public List<InventoryItem> getInventoryItems(ProductQueryParameters queryParameters)
+        public List<ItemDto> getInventoryItems(ProductQueryParameters queryParameters)
         {
             IQueryable<InventoryItem> inventoryItems = _unitOfWork.ItemsRepository.GetAll().AsQueryable();
 
@@ -55,20 +57,66 @@ namespace asp_net_web_api.API.Services
                 .Skip(queryParameters.Size * (queryParameters.Page - 1))
                 .Take(queryParameters.Size);
 
-            return  inventoryItems.Include(i => i.Category).ToList();
+            List<ItemDto> items = new();
+
+            foreach (var item in inventoryItems)
+            {
+                var category = _unitOfWork.CategoryRepository.GetById(item.CategoryId);
+                ItemDto it = new ItemDto(){
+                    Id = item.Id,
+                    Name = item.Name,
+                    Description = item.Description,
+                    Price = item.Price,
+                    CategoryId = item.CategoryId,
+                    Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
+                    CreatedAt = item.CreatedAt,
+                    ModifiedAt = item.ModifiedAt
+                };
+
+                items.Add(it);
+            }
+
+            return  items;
         }
 
-        public InventoryItem? getInventoryItem(int id)
+        public ItemDto? getInventoryItem(int id)
         {
             
-             return  _unitOfWork.ItemsRepository.GetById(id);
-            //  return _unitOfWork.ItemsRepository.Table.Include(i=>i.Category).FirstOrDefault(i=>i.Id==id);
+            var inventoryItem = _unitOfWork.ItemsRepository.GetById(id);
+            if(inventoryItem==null) return null;
+            var category = _unitOfWork.CategoryRepository.GetById((int)inventoryItem.CategoryId);
+
+            return new ItemDto(){
+                Id = inventoryItem.Id,
+                Name = inventoryItem.Name,
+                Description = inventoryItem.Description,
+                Price = inventoryItem.Price,
+                CategoryId = inventoryItem.CategoryId,
+                Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
+                CreatedAt = inventoryItem.CreatedAt,
+                ModifiedAt = inventoryItem.ModifiedAt
+            };
 
         }
 
-        public InventoryItem? addInventoryItem(InventoryItem item)
+        public CreateItemResponseDto? addInventoryItem(CreateItemRequestDto itemRequest)
         {
-            try{
+            var category = _unitOfWork.CategoryRepository.GetById((int)itemRequest.CategoryId) 
+                ?? throw new DbUpdateException("Category Not Found! Provide the correct category id");
+            
+            try
+            {
+                InventoryItem item = new(){
+                    Id = itemRequest.Id, 
+                    Name = itemRequest.Name,
+                    Description = itemRequest.Description,
+                    Price = itemRequest.Price,
+                    Sku = itemRequest.Sku,
+                    CategoryId = itemRequest.CategoryId,
+                    IsAvailable = itemRequest.IsAvailable,
+                    CreatedAt = DateTime.Now,
+                    ModifiedAt = DateTime.Now
+                };
                 _unitOfWork.ItemsRepository.Add(item);
                 _unitOfWork.Complete();
             }
@@ -76,22 +124,28 @@ namespace asp_net_web_api.API.Services
                 throw ex;
             }
 
-            return item;
+            CreateItemResponseDto response = new(){
+                Id = itemRequest.Id,
+                Name = itemRequest.Name,
+                Description = itemRequest.Description,
+                Price = itemRequest.Price,
+                CategoryId = itemRequest.CategoryId,
+                Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
+                IsAvailable = itemRequest.IsAvailable,
+                CreatedAt = DateTime.Now,
+                ModifiedAt = DateTime.Now
+            };
+
+            return response;
         }
         
         
         public  InventoryItem? deleteInventoryItem(int id)
         {
             var item = _unitOfWork.ItemsRepository.GetById(id);
-
-            if (item == null){
-                return null;
-            }
-            
+            if(item == null) return null;
             _unitOfWork.ItemsRepository.Delete(item);
-
             _unitOfWork.Complete();
-
             return item;
         }
 
@@ -99,7 +153,6 @@ namespace asp_net_web_api.API.Services
             if (id != item.Id) return null;
             
             _unitOfWork.ItemsRepository.Update(item);
-            
             var itemToUpdate = _unitOfWork.ItemsRepository.GetById(id);
         
             try{
@@ -117,6 +170,5 @@ namespace asp_net_web_api.API.Services
             var updatedItem = _unitOfWork.ItemsRepository.GetById(id);
             return updatedItem;
         }
-
     }
 }

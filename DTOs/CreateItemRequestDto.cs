@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
-namespace asp_net_web_api.API.Models
+namespace asp_net_web_api.API.DTO
 {
-    public class InventoryItem : BaseModel
+    public class CreateItemRequestDto
     {
+        public int Id { get; set; }
+
         [Required]
         public string Sku { get; set; } = string.Empty;
 
@@ -21,7 +22,5 @@ namespace asp_net_web_api.API.Models
         [Required]
         public int CategoryId { get; set; }
 
-        [JsonIgnore]
-        public virtual Category? Category { get; set; }
     }
 }
