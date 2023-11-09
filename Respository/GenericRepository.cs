@@ -39,12 +39,14 @@ namespace asp_net_web_api.API.Respository
         }
 
         public void Update(T entity) {
+            // _context.ChangeTracker.Clear();
             try  
             {  
                 if(entity == null)  
                 {  
                     throw new ArgumentNullException(nameof(entity));  
                 }  
+                // _context.Set<T>().Update(entity);
                 _context.Entry(entity).State = EntityState.Modified;
             }  
             catch (DbUpdateException  dbEx)  
@@ -52,6 +54,29 @@ namespace asp_net_web_api.API.Respository
                 var fail = new Exception(dbEx.Message, dbEx);                  
                 throw fail;  
             }  
+        }
+
+        public void UpdateColumns(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> updateFactory)
+        {
+            var entity = _context.Set<T>().FirstOrDefault(predicate);
+            
+            if (entity != null)
+            {
+                var updatedEntity = updateFactory.Compile().Invoke(entity);
+
+                var entry = _context.Entry(updatedEntity);
+                
+                entry.State = EntityState.Modified;
+
+                foreach (var property in entry.OriginalValues.Properties)
+                {
+                    var propertyName = property.Name;
+                    if (!entry.OriginalValues[propertyName].Equals(entry.CurrentValues[propertyName]))
+                    {
+                        entry.Property(propertyName).IsModified = true;
+                    }
+                }
+            }
         }
 
         public void Delete(T entity) {

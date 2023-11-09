@@ -6,6 +6,7 @@ namespace asp_net_web_api.API.Respository{
         ICategoryRepository CategoryRepository { get; }
     
         int Complete();
+        public IUnitOfWork Create();
 
     }
 }

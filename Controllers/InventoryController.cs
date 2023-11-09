@@ -38,6 +38,7 @@ namespace asp_net_web_api.API.Controllers
         }
 
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CreateItemResponseDto))]
         public  ActionResult<CreateItemResponseDto> AddInventoryItem(CreateItemRequestDto item)
         {
             var newItem = _inventoryService.addInventoryItem(item);
@@ -52,18 +53,18 @@ namespace asp_net_web_api.API.Controllers
             var item = _inventoryService.deleteInventoryItem(id);
             if (item == null) return NotFound("The requested item to delete was not found");
             _logger.LogInformation("DeleteInventoryItem invoked");
-            return NoContent();
+            return Ok("Item deleted");
         }
 
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(object))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(object))]
-        public ActionResult<InventoryItem> UpdateInventoryItem(int id, InventoryItem item){
-            if (id != item.Id) return BadRequest("Wrong item id on request and url");
-            var updatedItem =  _inventoryService.updateInventoryItem(id, item); 
-            if(updatedItem==null) return NotFound("The requested item to update was not found");
+        public ActionResult<ItemDto> UpdateInventoryItem(int id, CreateItemRequestDto itemRequest){
+            if (id != itemRequest.Id) return BadRequest("Wrong item id on request and url");
+            var updatedItemDto =  _inventoryService.updateInventoryItem(id, itemRequest); 
+            if(updatedItemDto==null) return NotFound("The requested item to update was not found");
             _logger.LogInformation("UpdateInventoryItem invoked");
-            return Ok(updatedItem);
+            return Ok(updatedItemDto);
         }
     }
 }

@@ -10,6 +10,7 @@ namespace asp_net_web_api.API.Respository
         T? GetById(int id);
         void Add(T entity);
         void Update(T entity);
+        void UpdateColumns(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> updateFactory);
         void Delete(T entity);
         IEnumerable<T> Find(Expression<Func<T, bool>> expression);
         void RemoveRange(IEnumerable<T> entities);

@@ -11,6 +11,6 @@ namespace asp_net_web_api.API.Services
          public ItemDto? getInventoryItem(int id);
          public CreateItemResponseDto? addInventoryItem(CreateItemRequestDto itemRequest);
          public InventoryItem? deleteInventoryItem(int id);
-         public InventoryItem? updateInventoryItem(int id, InventoryItem item);
+         public ItemDto? updateInventoryItem(int id, CreateItemRequestDto item);
     }
 }

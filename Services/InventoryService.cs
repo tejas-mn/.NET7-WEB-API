@@ -4,6 +4,7 @@ using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Respository;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace asp_net_web_api.API.Services
 {
@@ -75,6 +76,7 @@ namespace asp_net_web_api.API.Services
 
                 items.Add(it);
             }
+            _unitOfWork.Complete();
 
             return  items;
         }
@@ -85,7 +87,7 @@ namespace asp_net_web_api.API.Services
             var inventoryItem = _unitOfWork.ItemsRepository.GetById(id);
             if(inventoryItem==null) return null;
             var category = _unitOfWork.CategoryRepository.GetById((int)inventoryItem.CategoryId);
-
+            _unitOfWork.Complete();
             return new ItemDto(){
                 Id = inventoryItem.Id,
                 Name = inventoryItem.Name,
@@ -119,6 +121,7 @@ namespace asp_net_web_api.API.Services
                 };
                 _unitOfWork.ItemsRepository.Add(item);
                 _unitOfWork.Complete();
+
             }
             catch(DbUpdateException ex){
                 throw ex;
@@ -142,24 +145,46 @@ namespace asp_net_web_api.API.Services
         
         public  InventoryItem? deleteInventoryItem(int id)
         {
-            var item = _unitOfWork.ItemsRepository.GetById(id);
-            if(item == null) return null;
-            _unitOfWork.ItemsRepository.Delete(item);
-            _unitOfWork.Complete();
+            InventoryItem? item;
+
+            using (var uow = _unitOfWork.Create()) {
+                item = uow.ItemsRepository.GetById(id);
+                if(item == null) return null;
+                uow.ItemsRepository.Delete(item);
+                uow.Complete();
+            }
+
             return item;
         }
 
-         public  InventoryItem? updateInventoryItem(int id, InventoryItem item){
-            if (id != item.Id) return null;
+         public  ItemDto? updateInventoryItem(int id, CreateItemRequestDto itemRequest){
+            if (id != itemRequest.Id) return null;
             
-            _unitOfWork.ItemsRepository.Update(item);
-            var itemToUpdate = _unitOfWork.ItemsRepository.GetById(id);
+            var existingItem = _unitOfWork.ItemsRepository.GetById(itemRequest.Id);
+            if(existingItem == null) return null;
+            
+            var category = _unitOfWork.CategoryRepository.GetById((int)itemRequest.CategoryId) 
+            ?? throw new DbUpdateException("Category Not Found! Provide the correct category id");
+            
+            existingItem.Id = itemRequest.Id;
+            existingItem.Name = itemRequest.Name;
+            existingItem.Description = itemRequest.Description;
+            existingItem.Price = itemRequest.Price;
+            existingItem.Sku = itemRequest.Sku;
+            existingItem.CategoryId = itemRequest.CategoryId;
+            existingItem.IsAvailable = itemRequest.IsAvailable;
+            existingItem.ModifiedAt = DateTime.Now;
+            
+            _unitOfWork.ItemsRepository.Update(existingItem);
+            _unitOfWork.Complete();
+            
+            var updatedItem = _unitOfWork.ItemsRepository.GetById(id);
         
             try{
                 _unitOfWork.Complete();
             }
             catch (DbUpdateException){
-                if (itemToUpdate == null){
+                if (updatedItem == null){
                     return null;
                 }
                 else{
@@ -167,8 +192,19 @@ namespace asp_net_web_api.API.Services
                 }
             }
 
-            var updatedItem = _unitOfWork.ItemsRepository.GetById(id);
-            return updatedItem;
+            ItemDto responseItemDto = new ItemDto(){
+                Id = updatedItem.Id,
+                Name = updatedItem.Name,
+                Description = updatedItem.Description,
+                Price = updatedItem.Price,
+                CategoryId = updatedItem.CategoryId,
+                Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
+                IsAvailable = itemRequest.IsAvailable,
+                CreatedAt = updatedItem.CreatedAt,
+                ModifiedAt = updatedItem.ModifiedAt
+            };
+
+            return responseItemDto;
         }
     }
 }
