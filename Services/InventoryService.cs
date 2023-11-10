@@ -1,19 +1,19 @@
-using System.Runtime.CompilerServices;
-using System;
 using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Respository;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
+using AutoMapper;
 
 namespace asp_net_web_api.API.Services
 {
     public class InventoryService : IInventoryService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public InventoryService(IUnitOfWork unitOfWork){
+        public InventoryService(IUnitOfWork unitOfWork, IMapper mapper){
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         public List<ItemDto> getInventoryItems(ProductQueryParameters queryParameters)
@@ -63,19 +63,10 @@ namespace asp_net_web_api.API.Services
             foreach (var item in inventoryItems)
             {
                 var category = _unitOfWork.CategoryRepository.GetById(item.CategoryId);
-                ItemDto it = new ItemDto(){
-                    Id = item.Id,
-                    Name = item.Name,
-                    Description = item.Description,
-                    Price = item.Price,
-                    CategoryId = item.CategoryId,
-                    Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
-                    CreatedAt = item.CreatedAt,
-                    ModifiedAt = item.ModifiedAt
-                };
-
+                ItemDto it = _mapper.Map<ItemDto>(item);
                 items.Add(it);
             }
+
             _unitOfWork.Complete();
 
             return  items;
@@ -83,22 +74,10 @@ namespace asp_net_web_api.API.Services
 
         public ItemDto? getInventoryItem(int id)
         {
-            
             var inventoryItem = _unitOfWork.ItemsRepository.GetById(id);
             if(inventoryItem==null) return null;
             var category = _unitOfWork.CategoryRepository.GetById((int)inventoryItem.CategoryId);
-            _unitOfWork.Complete();
-            return new ItemDto(){
-                Id = inventoryItem.Id,
-                Name = inventoryItem.Name,
-                Description = inventoryItem.Description,
-                Price = inventoryItem.Price,
-                CategoryId = inventoryItem.CategoryId,
-                Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
-                CreatedAt = inventoryItem.CreatedAt,
-                ModifiedAt = inventoryItem.ModifiedAt
-            };
-
+            return _mapper.Map<ItemDto?>(inventoryItem);
         }
 
         public CreateItemResponseDto? addInventoryItem(CreateItemRequestDto itemRequest)
@@ -108,36 +87,22 @@ namespace asp_net_web_api.API.Services
             
             try
             {
-                InventoryItem item = new(){
-                    Id = itemRequest.Id, 
-                    Name = itemRequest.Name,
-                    Description = itemRequest.Description,
-                    Price = itemRequest.Price,
-                    Sku = itemRequest.Sku,
-                    CategoryId = itemRequest.CategoryId,
-                    IsAvailable = itemRequest.IsAvailable,
-                    CreatedAt = DateTime.Now,
-                    ModifiedAt = DateTime.Now
-                };
+                InventoryItem item = _mapper.Map<InventoryItem>(itemRequest);
+                item.CreatedAt=item.ModifiedAt=DateTime.Now;
                 _unitOfWork.ItemsRepository.Add(item);
                 _unitOfWork.Complete();
-
             }
             catch(DbUpdateException ex){
                 throw ex;
             }
 
-            CreateItemResponseDto response = new(){
-                Id = itemRequest.Id,
-                Name = itemRequest.Name,
-                Description = itemRequest.Description,
-                Price = itemRequest.Price,
-                CategoryId = itemRequest.CategoryId,
-                Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
-                IsAvailable = itemRequest.IsAvailable,
-                CreatedAt = DateTime.Now,
-                ModifiedAt = DateTime.Now
-            };
+            var response = _mapper.Map(itemRequest, new CreateItemResponseDto(), opts => {
+                opts.BeforeMap((src, dst)=>{
+                    dst.Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new();
+                    dst.CreatedAt = DateTime.Now;
+                    dst.ModifiedAt = DateTime.Now;
+                });
+            });
 
             return response;
         }
@@ -146,64 +111,40 @@ namespace asp_net_web_api.API.Services
         public  InventoryItem? deleteInventoryItem(int id)
         {
             InventoryItem? item;
-
             using (var uow = _unitOfWork.Create()) {
                 item = uow.ItemsRepository.GetById(id);
                 if(item == null) return null;
                 uow.ItemsRepository.Delete(item);
                 uow.Complete();
             }
-
             return item;
         }
 
          public  ItemDto? updateInventoryItem(int id, CreateItemRequestDto itemRequest){
             if (id != itemRequest.Id) return null;
             
-            var existingItem = _unitOfWork.ItemsRepository.GetById(itemRequest.Id);
-            if(existingItem == null) return null;
+            var itemToUpdate = _unitOfWork.ItemsRepository.GetById(itemRequest.Id);
+            if(itemToUpdate == null) return null;
             
             var category = _unitOfWork.CategoryRepository.GetById((int)itemRequest.CategoryId) 
             ?? throw new DbUpdateException("Category Not Found! Provide the correct category id");
             
-            existingItem.Id = itemRequest.Id;
-            existingItem.Name = itemRequest.Name;
-            existingItem.Description = itemRequest.Description;
-            existingItem.Price = itemRequest.Price;
-            existingItem.Sku = itemRequest.Sku;
-            existingItem.CategoryId = itemRequest.CategoryId;
-            existingItem.IsAvailable = itemRequest.IsAvailable;
-            existingItem.ModifiedAt = DateTime.Now;
+            _mapper.Map(itemRequest, itemToUpdate , opts=>{
+                opts.BeforeMap((src, dst)=>{
+                    dst.ModifiedAt = DateTime.Now;
+                });
+            });
+
+            _unitOfWork.ItemsRepository.Update(itemToUpdate);
             
-            _unitOfWork.ItemsRepository.Update(existingItem);
-            _unitOfWork.Complete();
-            
-            var updatedItem = _unitOfWork.ItemsRepository.GetById(id);
-        
             try{
                 _unitOfWork.Complete();
             }
             catch (DbUpdateException){
-                if (updatedItem == null){
-                    return null;
-                }
-                else{
                     throw;
-                }
             }
 
-            ItemDto responseItemDto = new ItemDto(){
-                Id = updatedItem.Id,
-                Name = updatedItem.Name,
-                Description = updatedItem.Description,
-                Price = updatedItem.Price,
-                CategoryId = updatedItem.CategoryId,
-                Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
-                IsAvailable = itemRequest.IsAvailable,
-                CreatedAt = updatedItem.CreatedAt,
-                ModifiedAt = updatedItem.ModifiedAt
-            };
-
+            var responseItemDto = _mapper.Map<ItemDto>(itemToUpdate);
             return responseItemDto;
         }
     }
