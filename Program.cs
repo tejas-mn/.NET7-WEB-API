@@ -3,6 +3,7 @@ using Microsoft.OpenApi.Models;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
 using asp_net_web_api.API.Respository;
+using asp_net_web_api.API.Mappings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,7 @@ builder.Services.AddTransient(typeof(IGenericRepository<>), typeof(GenericReposi
 builder.Services.AddTransient<IItemRepository, ItemRepository>();
 builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
 builder.Services.AddTransient<IInventoryService, InventoryService>();
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddMvc(options => {
    options.SuppressAsyncSuffixInActionNames = false;

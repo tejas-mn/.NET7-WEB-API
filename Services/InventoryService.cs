@@ -1,23 +1,114 @@
-using System.Runtime.CompilerServices;
-using System;
 using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Respository;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
+using Microsoft.VisualBasic;
 
 namespace asp_net_web_api.API.Services
 {
     public class InventoryService : IInventoryService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public InventoryService(IUnitOfWork unitOfWork){
+        public InventoryService(IUnitOfWork unitOfWork, IMapper mapper){
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         public List<ItemDto> getInventoryItems(ProductQueryParameters queryParameters)
         {
             IQueryable<InventoryItem> inventoryItems = _unitOfWork.ItemsRepository.GetAll().AsQueryable();
+            inventoryItems = handleQuery(inventoryItems, queryParameters);
+            List<ItemDto> items = new();
+            foreach (var item in inventoryItems)
+            {
+                //access category to lazy load before mapping
+                // var category = _unitOfWork.CategoryRepository.GetById(item.CategoryId);
+                ItemDto it = _mapper.Map<ItemDto>(item);
+                items.Add(it);
+            }
+            _unitOfWork.Complete();
+            return  items;
+        }
+
+        public ItemDto? getInventoryItem(int id)
+        {
+            var inventoryItem = _unitOfWork.ItemsRepository.GetById(id);
+            if(inventoryItem==null) return null;
+            var category = _unitOfWork.CategoryRepository.GetById((int)inventoryItem.CategoryId);
+            return _mapper.Map<ItemDto?>(inventoryItem);
+        }
+
+        public CreateItemResponseDto? addInventoryItem(CreateItemRequestDto itemRequest)
+        {
+            var category = _unitOfWork.CategoryRepository.GetById((int)itemRequest.CategoryId) 
+                ?? throw new DbUpdateException("Category Not Found! Provide the correct category id");
+            
+            try
+            {
+                InventoryItem item = _mapper.Map<InventoryItem>(itemRequest);
+                item.CreatedAt=item.ModifiedAt=DateTime.Now;
+                _unitOfWork.ItemsRepository.Add(item);
+                _unitOfWork.Complete();
+            }
+            catch(DbUpdateException ex){
+                throw ex;
+            }
+
+            var response = _mapper.Map(itemRequest, new CreateItemResponseDto(), opts => {
+                opts.BeforeMap((src, dst)=>{
+                    dst.Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new();
+                    dst.CreatedAt = DateTime.Now;
+                    dst.ModifiedAt = DateTime.Now;
+                });
+            });
+
+            return response;
+        }
+        
+        
+        public  InventoryItem? deleteInventoryItem(int id)
+        {
+            InventoryItem? item;
+            using (var uow = _unitOfWork.Create()) {
+                item = uow.ItemsRepository.GetById(id);
+                if(item == null) return null;
+                uow.ItemsRepository.Delete(item);
+                uow.Complete();
+            }
+            return item;
+        }
+
+        public  ItemDto? updateInventoryItem(int id, CreateItemRequestDto itemRequest){
+            if (id != itemRequest.Id) return null;
+            
+            var itemToUpdate = _unitOfWork.ItemsRepository.GetById(itemRequest.Id);
+            if(itemToUpdate == null) return null;
+            
+            var category = _unitOfWork.CategoryRepository.GetById((int)itemRequest.CategoryId) 
+            ?? throw new DbUpdateException("Category Not Found! Provide the correct category id");
+            
+            _mapper.Map(itemRequest, itemToUpdate , opts=>{
+                opts.BeforeMap((src, dst)=>{
+                    dst.ModifiedAt = DateTime.Now;
+                });
+            });
+            
+            try{
+                 _unitOfWork.ItemsRepository.Update(itemToUpdate);
+                _unitOfWork.Complete();
+            }
+            catch (DbUpdateException){
+                    throw;
+            }
+
+            var responseItemDto = _mapper.Map<ItemDto>(itemToUpdate);
+            return responseItemDto;
+        }
+
+        private static IQueryable<InventoryItem> handleQuery(IQueryable<InventoryItem> inventoryItems, ProductQueryParameters queryParameters){
 
             if(queryParameters.MinPrice != null){
                 inventoryItems = inventoryItems.Where(p => p.Price >= queryParameters.MinPrice);
@@ -57,118 +148,7 @@ namespace asp_net_web_api.API.Services
                 .Skip(queryParameters.Size * (queryParameters.Page - 1))
                 .Take(queryParameters.Size);
 
-            List<ItemDto> items = new();
-
-            foreach (var item in inventoryItems)
-            {
-                var category = _unitOfWork.CategoryRepository.GetById(item.CategoryId);
-                ItemDto it = new ItemDto(){
-                    Id = item.Id,
-                    Name = item.Name,
-                    Description = item.Description,
-                    Price = item.Price,
-                    CategoryId = item.CategoryId,
-                    Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
-                    CreatedAt = item.CreatedAt,
-                    ModifiedAt = item.ModifiedAt
-                };
-
-                items.Add(it);
-            }
-
-            return  items;
-        }
-
-        public ItemDto? getInventoryItem(int id)
-        {
-            
-            var inventoryItem = _unitOfWork.ItemsRepository.GetById(id);
-            if(inventoryItem==null) return null;
-            var category = _unitOfWork.CategoryRepository.GetById((int)inventoryItem.CategoryId);
-
-            return new ItemDto(){
-                Id = inventoryItem.Id,
-                Name = inventoryItem.Name,
-                Description = inventoryItem.Description,
-                Price = inventoryItem.Price,
-                CategoryId = inventoryItem.CategoryId,
-                Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
-                CreatedAt = inventoryItem.CreatedAt,
-                ModifiedAt = inventoryItem.ModifiedAt
-            };
-
-        }
-
-        public CreateItemResponseDto? addInventoryItem(CreateItemRequestDto itemRequest)
-        {
-            var category = _unitOfWork.CategoryRepository.GetById((int)itemRequest.CategoryId) 
-                ?? throw new DbUpdateException("Category Not Found! Provide the correct category id");
-            
-            try
-            {
-                InventoryItem item = new(){
-                    Id = itemRequest.Id, 
-                    Name = itemRequest.Name,
-                    Description = itemRequest.Description,
-                    Price = itemRequest.Price,
-                    Sku = itemRequest.Sku,
-                    CategoryId = itemRequest.CategoryId,
-                    IsAvailable = itemRequest.IsAvailable,
-                    CreatedAt = DateTime.Now,
-                    ModifiedAt = DateTime.Now
-                };
-                _unitOfWork.ItemsRepository.Add(item);
-                _unitOfWork.Complete();
-            }
-            catch(DbUpdateException ex){
-                throw ex;
-            }
-
-            CreateItemResponseDto response = new(){
-                Id = itemRequest.Id,
-                Name = itemRequest.Name,
-                Description = itemRequest.Description,
-                Price = itemRequest.Price,
-                CategoryId = itemRequest.CategoryId,
-                Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new(),
-                IsAvailable = itemRequest.IsAvailable,
-                CreatedAt = DateTime.Now,
-                ModifiedAt = DateTime.Now
-            };
-
-            return response;
-        }
-        
-        
-        public  InventoryItem? deleteInventoryItem(int id)
-        {
-            var item = _unitOfWork.ItemsRepository.GetById(id);
-            if(item == null) return null;
-            _unitOfWork.ItemsRepository.Delete(item);
-            _unitOfWork.Complete();
-            return item;
-        }
-
-         public  InventoryItem? updateInventoryItem(int id, InventoryItem item){
-            if (id != item.Id) return null;
-            
-            _unitOfWork.ItemsRepository.Update(item);
-            var itemToUpdate = _unitOfWork.ItemsRepository.GetById(id);
-        
-            try{
-                _unitOfWork.Complete();
-            }
-            catch (DbUpdateException){
-                if (itemToUpdate == null){
-                    return null;
-                }
-                else{
-                    throw;
-                }
-            }
-
-            var updatedItem = _unitOfWork.ItemsRepository.GetById(id);
-            return updatedItem;
+            return inventoryItems.Include(i => i.Category);
         }
     }
 }
