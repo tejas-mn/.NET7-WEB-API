@@ -25,7 +25,7 @@ namespace asp_net_web_api.API.Services
             foreach (var item in inventoryItems)
             {
                 //access category to lazy load before mapping
-                // var category = _unitOfWork.CategoryRepository.GetById(item.CategoryId);
+                var category = _unitOfWork.CategoryRepository.GetById(item.CategoryId);
                 ItemDto it = _mapper.Map<ItemDto>(item);
                 items.Add(it);
             }
