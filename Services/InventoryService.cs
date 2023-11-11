@@ -3,6 +3,7 @@ using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Respository;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
+using Microsoft.VisualBasic;
 
 namespace asp_net_web_api.API.Services
 {
@@ -19,56 +20,16 @@ namespace asp_net_web_api.API.Services
         public List<ItemDto> getInventoryItems(ProductQueryParameters queryParameters)
         {
             IQueryable<InventoryItem> inventoryItems = _unitOfWork.ItemsRepository.GetAll().AsQueryable();
-
-            if(queryParameters.MinPrice != null){
-                inventoryItems = inventoryItems.Where(p => p.Price >= queryParameters.MinPrice);
-            }
-
-            if(queryParameters.MaxPrice != null){
-                inventoryItems = inventoryItems.Where(p => p.Price <= queryParameters.MaxPrice);
-            }
-
-            if(!string.IsNullOrEmpty(queryParameters.Name)){
-                inventoryItems = inventoryItems.Where(p => p.Name.ToLower().Contains(queryParameters.Name.ToLower()));
-            }
-
-            if(!string.IsNullOrEmpty(queryParameters.Sku)){
-                inventoryItems = inventoryItems.Where(p => p.Sku.ToLower().Contains(queryParameters.Sku.ToLower()));
-            }
-
-            if(!string.IsNullOrEmpty(queryParameters.SearchTerm)){
-                inventoryItems = inventoryItems.Where(p => p.Name.ToLower().Contains(queryParameters.SearchTerm.ToLower()) || p.Sku.ToLower().Contains(queryParameters.SearchTerm.ToLower()));
-            }
-            
-            if(!string.IsNullOrEmpty(queryParameters.Category)){
-                inventoryItems = inventoryItems.Where(p => p.Category!=null && p.Category.Name.ToLower().Contains(queryParameters.Category.ToLower()));
-            }
-
-            if(!string.IsNullOrEmpty(queryParameters.SortBy)){
-                if (typeof(InventoryItem).GetProperty(queryParameters.SortBy) != null)
-                {
-                    inventoryItems = inventoryItems.OrderByCustom(
-                        queryParameters.SortBy,
-                        queryParameters.SortOrder
-                    );
-                }
-            }
-
-            inventoryItems = inventoryItems
-                .Skip(queryParameters.Size * (queryParameters.Page - 1))
-                .Take(queryParameters.Size);
-
+            inventoryItems = handleQuery(inventoryItems, queryParameters);
             List<ItemDto> items = new();
-
             foreach (var item in inventoryItems)
             {
-                var category = _unitOfWork.CategoryRepository.GetById(item.CategoryId);
+                //access category to lazy load before mapping
+                // var category = _unitOfWork.CategoryRepository.GetById(item.CategoryId);
                 ItemDto it = _mapper.Map<ItemDto>(item);
                 items.Add(it);
             }
-
             _unitOfWork.Complete();
-
             return  items;
         }
 
@@ -120,7 +81,7 @@ namespace asp_net_web_api.API.Services
             return item;
         }
 
-         public  ItemDto? updateInventoryItem(int id, CreateItemRequestDto itemRequest){
+        public  ItemDto? updateInventoryItem(int id, CreateItemRequestDto itemRequest){
             if (id != itemRequest.Id) return null;
             
             var itemToUpdate = _unitOfWork.ItemsRepository.GetById(itemRequest.Id);
@@ -134,10 +95,9 @@ namespace asp_net_web_api.API.Services
                     dst.ModifiedAt = DateTime.Now;
                 });
             });
-
-            _unitOfWork.ItemsRepository.Update(itemToUpdate);
             
             try{
+                 _unitOfWork.ItemsRepository.Update(itemToUpdate);
                 _unitOfWork.Complete();
             }
             catch (DbUpdateException){
@@ -146,6 +106,49 @@ namespace asp_net_web_api.API.Services
 
             var responseItemDto = _mapper.Map<ItemDto>(itemToUpdate);
             return responseItemDto;
+        }
+
+        private static IQueryable<InventoryItem> handleQuery(IQueryable<InventoryItem> inventoryItems, ProductQueryParameters queryParameters){
+
+            if(queryParameters.MinPrice != null){
+                inventoryItems = inventoryItems.Where(p => p.Price >= queryParameters.MinPrice);
+            }
+
+            if(queryParameters.MaxPrice != null){
+                inventoryItems = inventoryItems.Where(p => p.Price <= queryParameters.MaxPrice);
+            }
+
+            if(!string.IsNullOrEmpty(queryParameters.Name)){
+                inventoryItems = inventoryItems.Where(p => p.Name.ToLower().Contains(queryParameters.Name.ToLower()));
+            }
+
+            if(!string.IsNullOrEmpty(queryParameters.Sku)){
+                inventoryItems = inventoryItems.Where(p => p.Sku.ToLower().Contains(queryParameters.Sku.ToLower()));
+            }
+
+            if(!string.IsNullOrEmpty(queryParameters.SearchTerm)){
+                inventoryItems = inventoryItems.Where(p => p.Name.ToLower().Contains(queryParameters.SearchTerm.ToLower()) || p.Sku.ToLower().Contains(queryParameters.SearchTerm.ToLower()));
+            }
+            
+            if(!string.IsNullOrEmpty(queryParameters.Category)){
+                inventoryItems = inventoryItems.Where(p => p.Category!=null && p.Category.Name.ToLower().Contains(queryParameters.Category.ToLower()));
+            }
+
+            if(!string.IsNullOrEmpty(queryParameters.SortBy)){
+                if (typeof(InventoryItem).GetProperty(queryParameters.SortBy) != null)
+                {
+                    inventoryItems = inventoryItems.OrderByCustom(
+                        queryParameters.SortBy,
+                        queryParameters.SortOrder
+                    );
+                }
+            }
+
+            inventoryItems = inventoryItems
+                .Skip(queryParameters.Size * (queryParameters.Page - 1))
+                .Take(queryParameters.Size);
+
+            return inventoryItems.Include(i => i.Category);
         }
     }
 }

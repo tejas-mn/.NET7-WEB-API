@@ -6,7 +6,7 @@ namespace asp_net_web_api.API.Models
     {
         
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options){
-            
+            this.ChangeTracker.LazyLoadingEnabled = false;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

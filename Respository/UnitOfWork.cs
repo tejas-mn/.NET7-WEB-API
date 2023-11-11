@@ -34,7 +34,7 @@ namespace  asp_net_web_api.API.Respository
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!_disposed)
+            if (!_disposed) 
             {
                 if (disposing)
                 {
