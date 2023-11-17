@@ -3,7 +3,6 @@ using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Respository;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
-using Microsoft.VisualBasic;
 
 namespace asp_net_web_api.API.Services
 {
@@ -11,7 +10,7 @@ namespace asp_net_web_api.API.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-
+        
         public InventoryService(IUnitOfWork unitOfWork, IMapper mapper){
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -19,25 +18,16 @@ namespace asp_net_web_api.API.Services
 
         public List<ItemDto> getInventoryItems(ProductQueryParameters queryParameters)
         {
-            IQueryable<InventoryItem> inventoryItems = _unitOfWork.ItemsRepository.GetAll().AsQueryable();
+            IQueryable<InventoryItem> inventoryItems = _unitOfWork.ItemsRepository.GetAll(item => item.Category).AsQueryable();
             inventoryItems = handleQuery(inventoryItems, queryParameters);
-            List<ItemDto> items = new();
-            foreach (var item in inventoryItems)
-            {
-                //access category to lazy load before mapping
-                var category = _unitOfWork.CategoryRepository.GetById(item.CategoryId);
-                ItemDto it = _mapper.Map<ItemDto>(item);
-                items.Add(it);
-            }
-            _unitOfWork.Complete();
-            return  items;
+            List<ItemDto> items = _mapper.Map<List<ItemDto>>(inventoryItems.ToList());
+            return items;
         }
 
         public ItemDto? getInventoryItem(int id)
         {
-            var inventoryItem = _unitOfWork.ItemsRepository.GetById(id);
+            var inventoryItem = _unitOfWork.ItemsRepository.GetById(id, item => item.Category);
             if(inventoryItem==null) return null;
-            var category = _unitOfWork.CategoryRepository.GetById((int)inventoryItem.CategoryId);
             return _mapper.Map<ItemDto?>(inventoryItem);
         }
 
@@ -53,13 +43,14 @@ namespace asp_net_web_api.API.Services
                 _unitOfWork.ItemsRepository.Add(item);
                 _unitOfWork.Complete();
             }
-            catch(DbUpdateException ex){
-                throw ex;
+            catch(DbUpdateException){
+                
+                throw ;
             }
 
             var response = _mapper.Map(itemRequest, new CreateItemResponseDto(), opts => {
                 opts.BeforeMap((src, dst)=>{
-                    dst.Category = category!=null?new CategoryDto(){Id = category.Id, Name=category.Name} : new();
+                    dst.Category = new CategoryDto(){Id = category.Id, Name=category.Name};
                     dst.CreatedAt = DateTime.Now;
                     dst.ModifiedAt = DateTime.Now;
                 });
@@ -68,16 +59,12 @@ namespace asp_net_web_api.API.Services
             return response;
         }
         
-        
         public  InventoryItem? deleteInventoryItem(int id)
         {
-            InventoryItem? item;
-            using (var uow = _unitOfWork.Create()) {
-                item = uow.ItemsRepository.GetById(id);
-                if(item == null) return null;
-                uow.ItemsRepository.Delete(item);
-                uow.Complete();
-            }
+            InventoryItem? item = _unitOfWork.ItemsRepository.GetById(id);
+            if(item == null) return null;
+            _unitOfWork.ItemsRepository.Delete(item);
+            _unitOfWork.Complete();
             return item;
         }
 
@@ -86,8 +73,8 @@ namespace asp_net_web_api.API.Services
             
             var itemToUpdate = _unitOfWork.ItemsRepository.GetById(itemRequest.Id);
             if(itemToUpdate == null) return null;
-            
-            var category = _unitOfWork.CategoryRepository.GetById((int)itemRequest.CategoryId) 
+                                                            
+            var category = _unitOfWork.CategoryRepository.GetById((int)itemRequest.CategoryId)                                                                                                                                                                          
             ?? throw new DbUpdateException("Category Not Found! Provide the correct category id");
             
             _mapper.Map(itemRequest, itemToUpdate , opts=>{
@@ -103,7 +90,7 @@ namespace asp_net_web_api.API.Services
             catch (DbUpdateException){
                     throw;
             }
-
+            
             var responseItemDto = _mapper.Map<ItemDto>(itemToUpdate);
             return responseItemDto;
         }

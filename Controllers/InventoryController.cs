@@ -1,6 +1,7 @@
 using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
+using asp_net_web_api.API.Utility;
 using Microsoft.AspNetCore.Mvc;
 
 namespace asp_net_web_api.API.Controllers
@@ -32,7 +33,7 @@ namespace asp_net_web_api.API.Controllers
         public IActionResult GetInventoryItem(int id)
         {
             var item =  _inventoryService.getInventoryItem(id);
-            if (item == null) return NotFound("The requested item not found");
+            if (item == null) return NotFound(new Fault(){ Message = "Requested item not found" });
             _logger.LogInformation("GetInventoryItem invoked");
             return Ok(item);
         }
@@ -51,7 +52,7 @@ namespace asp_net_web_api.API.Controllers
         public IActionResult DeleteInventoryItem(int id)
         {
             var item = _inventoryService.deleteInventoryItem(id);
-            if (item == null) return NotFound("The requested item to delete was not found");
+            if (item == null) return NotFound(new Fault(){ Message = "Requested item to delete was not found" });
             _logger.LogInformation("DeleteInventoryItem invoked");
             return Ok("Item deleted");
         }
@@ -60,9 +61,9 @@ namespace asp_net_web_api.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(object))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(object))]
         public ActionResult<ItemDto> UpdateInventoryItem(int id, CreateItemRequestDto itemRequest){
-            if (id != itemRequest.Id) return BadRequest("Wrong item id on request and url");
+            if (id != itemRequest.Id) return BadRequest(new Fault(){ Message ="Wrong item id on request and url"});
             var updatedItemDto =  _inventoryService.updateInventoryItem(id, itemRequest); 
-            if(updatedItemDto==null) return NotFound("The requested item to update was not found");
+            if(updatedItemDto==null) return NotFound(new Fault(){ Message = "Requested item to update was not found" });
             _logger.LogInformation("UpdateInventoryItem invoked");
             return Ok(updatedItemDto);
         }
