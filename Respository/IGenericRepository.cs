@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace asp_net_web_api.API.Respository
 {
@@ -7,7 +8,9 @@ namespace asp_net_web_api.API.Respository
         IQueryable<T> Table { get; }  
 
         IEnumerable<T> GetAll();
+        public IEnumerable<T> GetAll(params Expression<Func<T, object>>[] includes);
         T? GetById(int id);
+        public T? GetById(int id, params Expression<Func<T, object>>[] includes);
         void Add(T entity);
         void Update(T entity);
         void UpdateColumns(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> updateFactory);

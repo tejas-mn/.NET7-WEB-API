@@ -23,7 +23,6 @@ namespace asp_net_web_api.API.Models
         public int CategoryId { get; set; }
 
         [JsonIgnore]
-        [ForeignKey("CategoryId")]
         public virtual Category? Category { get; set; }
     }
 }

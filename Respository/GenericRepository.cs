@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using asp_net_web_api.API.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace asp_net_web_api.API.Respository
 {
@@ -17,9 +18,40 @@ namespace asp_net_web_api.API.Respository
             return _context.Set<T>().ToList();
         }
 
+       public IEnumerable<T> GetAll(params Expression<Func<T, object>>[] includes){
+            IQueryable<T> query = Table; 
+
+            if(includes != null)
+            {
+                query = includes.Aggregate(query, (currentQuery, include) => currentQuery.Include(include));
+            }
+
+            return query.ToList();
+        }
+
         public T? GetById(int id) {
             return _context.Set<T>().Find(id);
         }
+
+        public T? GetById(int id, params Expression<Func<T, object>>[] includes) {
+            IQueryable<T> query = Table;
+
+            if (includes != null)
+            {
+                query = includes.Aggregate(query, (current, include) => current.Include(include));
+            }
+            
+            var idProperty = typeof(T).GetProperty("Id") ?? throw new ArgumentException("ID property not found");
+
+            var parameter = Expression.Parameter(typeof(T));
+            var property = Expression.Property(parameter, idProperty);
+            var equals = Expression.Equal(property, Expression.Constant(id));
+
+            var lambda = Expression.Lambda<Func<T, bool>>(equals, parameter);
+
+            return query.FirstOrDefault(lambda);
+        }
+
 
         public void Add(T entity) {
             try  

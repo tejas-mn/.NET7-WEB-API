@@ -1,6 +1,9 @@
+using System;
 using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
+using asp_net_web_api.API.Utility;
+using asp_net_web_api.API.ErrorHandling;
 using Microsoft.AspNetCore.Mvc;
 
 namespace asp_net_web_api.API.Controllers
@@ -31,29 +34,46 @@ namespace asp_net_web_api.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(object))]
         public IActionResult GetInventoryItem(int id)
         {
-            var item =  _inventoryService.getInventoryItem(id);
-            if (item == null) return NotFound("The requested item not found");
-            _logger.LogInformation("GetInventoryItem invoked");
-            return Ok(item);
+            try{
+                var item =  _inventoryService.getInventoryItem(id);
+                return Ok(item);
+            }catch(ItemNotFoundException ex){
+                _logger.LogError(ex, "An error occurred in GetInventoryItem");
+                return NotFound($"Item  {id} not found");
+            }
         }
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CreateItemResponseDto))]
         public  ActionResult<CreateItemResponseDto> AddInventoryItem(CreateItemRequestDto item)
         {
-            var newItem = _inventoryService.addInventoryItem(item);
-            _logger.LogInformation("CreateInventoryItem invoked");
-            return Ok(newItem);
+            try{
+                var newItem = _inventoryService.addInventoryItem(item);
+                _logger.LogInformation("addInventoryItem invoked");
+                return Ok(newItem);
+            }catch(CategoryNotFoundException ex){
+                _logger.LogError(ex, "An error occurred in updateInventoryItem");
+                return NotFound($"Category  {item.CategoryId} not found");
+            }catch(Exception ex){
+                _logger.LogError(ex, "An error occurred in updateInventoryItem");
+                return StatusCode(500, "Internal Servor Error");
+            }
+
         }
 
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(object))]
         public IActionResult DeleteInventoryItem(int id)
         {
-            var item = _inventoryService.deleteInventoryItem(id);
-            if (item == null) return NotFound("The requested item to delete was not found");
-            _logger.LogInformation("DeleteInventoryItem invoked");
-            return Ok("Item deleted");
+            try{
+                var item = _inventoryService.deleteInventoryItem(id);
+                _logger.LogInformation("DeleteInventoryItem invoked");
+                return Ok("Item deleted");
+            }catch(ItemNotFoundException ex){
+                _logger.LogError(ex, "An error occurred in deleteInventoryItem");
+                return NotFound(ex.Message);
+            }
+
         }
 
         [HttpPut("{id}")]
@@ -61,10 +81,20 @@ namespace asp_net_web_api.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(object))]
         public ActionResult<ItemDto> UpdateInventoryItem(int id, CreateItemRequestDto itemRequest){
             if (id != itemRequest.Id) return BadRequest("Wrong item id on request and url");
-            var updatedItemDto =  _inventoryService.updateInventoryItem(id, itemRequest); 
-            if(updatedItemDto==null) return NotFound("The requested item to update was not found");
-            _logger.LogInformation("UpdateInventoryItem invoked");
-            return Ok(updatedItemDto);
+            try{
+                var updatedItemDto =  _inventoryService.updateInventoryItem(id, itemRequest); 
+                _logger.LogInformation("UpdateInventoryItem invoked");
+                return Ok(updatedItemDto);
+            }catch(ItemNotFoundException ex){
+                _logger.LogError(ex, "An error occurred in updateInventoryItem");
+                return NotFound($"Item  {itemRequest.Id} not found");
+            }catch(CategoryNotFoundException ex){
+                _logger.LogError(ex, "An error occurred in updateInventoryItem");
+                return NotFound($"Category {itemRequest.CategoryId} not found");
+            }catch(Exception ex){
+                _logger.LogError(ex, "An error occurred in updateInventoryItem");
+                return StatusCode(500, "Internal Servor Error");
+            }
         }
     }
 }

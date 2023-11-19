@@ -18,6 +18,9 @@ namespace asp_net_web_api.API.Mappings
 
             CreateMap<CreateItemRequestDto, CreateItemResponseDto>();
 
+            CreateMap<InventoryItem, CreateItemResponseDto>();
+
+
         }
     }
 }
