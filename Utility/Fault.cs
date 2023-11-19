@@ -1,9 +1,9 @@
-
+using System;
 using System.Text.Json.Serialization;
 
 namespace asp_net_web_api.API.Utility {
 
-    public class Fault {
+    public class Fault : Exception {
         public string? ContextId { get; set; } = Guid.NewGuid().ToString();
         public string? Message { get; set; }
 

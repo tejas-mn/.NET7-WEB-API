@@ -1,9 +1,11 @@
+using System.Collections.Immutable;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
 using asp_net_web_api.API.Respository;
 using asp_net_web_api.API.Mappings;
+using asp_net_web_api.API.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,14 +18,12 @@ builder.Services.AddLogging(options => {
         options.AddConsole();
 });
 
-//builder.Services.AddTransient<IRepository<InventoryItem>, ItemRepository>();
-//builder.Services.AddScoped<IInventoryService,InventoryService>();
-
 builder.Services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddTransient<IItemRepository, ItemRepository>();
 builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
 builder.Services.AddTransient<IInventoryService, InventoryService>();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Services.AddTransient<ExceptionHandlingMiddleware>();
 
 builder.Services.AddMvc(options => {
    options.SuppressAsyncSuffixInActionNames = false;
@@ -47,6 +47,8 @@ if (app.Environment.IsDevelopment()){
 }
 
 app.UseHttpsRedirection();
+
+app.UseCustomExceptionHandlingMiddleware();
 
 app.UseAuthorization();
 

@@ -1,7 +1,9 @@
 using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Respository;
+using asp_net_web_api.API.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 using AutoMapper;
 
 namespace asp_net_web_api.API.Services
@@ -27,34 +29,29 @@ namespace asp_net_web_api.API.Services
         public ItemDto? getInventoryItem(int id)
         {
             var inventoryItem = _unitOfWork.ItemsRepository.GetById(id, item => item.Category);
-            if(inventoryItem==null) return null;
+            if(inventoryItem==null) throw new ItemNotFoundException("Requested Item Not Found");
             return _mapper.Map<ItemDto?>(inventoryItem);
         }
 
         public CreateItemResponseDto? addInventoryItem(CreateItemRequestDto itemRequest)
         {
-            var category = _unitOfWork.CategoryRepository.GetById((int)itemRequest.CategoryId) 
-                ?? throw new DbUpdateException("Category Not Found! Provide the correct category id");
+            InventoryItem item = _mapper.Map<InventoryItem>(itemRequest);
+            item.CreatedAt=item.ModifiedAt=DateTime.Now;
             
             try
             {
-                InventoryItem item = _mapper.Map<InventoryItem>(itemRequest);
-                item.CreatedAt=item.ModifiedAt=DateTime.Now;
                 _unitOfWork.ItemsRepository.Add(item);
                 _unitOfWork.Complete();
             }
-            catch(DbUpdateException){
-                
-                throw ;
+            catch(DbUpdateException ex){
+                if (ex.InnerException is SqliteException){
+                    throw new CategoryNotFoundException($"Category {itemRequest.CategoryId} Not found");
+                }
+                throw ex;
             }
 
-            var response = _mapper.Map(itemRequest, new CreateItemResponseDto(), opts => {
-                opts.BeforeMap((src, dst)=>{
-                    dst.Category = new CategoryDto(){Id = category.Id, Name=category.Name};
-                    dst.CreatedAt = DateTime.Now;
-                    dst.ModifiedAt = DateTime.Now;
-                });
-            });
+            var addedItem = _unitOfWork.ItemsRepository.GetById(itemRequest.Id, item=>item.Category);
+            var response = _mapper.Map<CreateItemResponseDto>(addedItem);
 
             return response;
         }
@@ -62,21 +59,19 @@ namespace asp_net_web_api.API.Services
         public  InventoryItem? deleteInventoryItem(int id)
         {
             InventoryItem? item = _unitOfWork.ItemsRepository.GetById(id);
-            if(item == null) return null;
+            if(item == null) throw new ItemNotFoundException($"Requested Item {id} Not Found");
             _unitOfWork.ItemsRepository.Delete(item);
             _unitOfWork.Complete();
             return item;
         }
 
-        public  ItemDto? updateInventoryItem(int id, CreateItemRequestDto itemRequest){
+        public  ItemDto? updateInventoryItem(int id, CreateItemRequestDto itemRequest)
+        {
             if (id != itemRequest.Id) return null;
             
-            var itemToUpdate = _unitOfWork.ItemsRepository.GetById(itemRequest.Id);
-            if(itemToUpdate == null) return null;
+            var itemToUpdate = _unitOfWork.ItemsRepository.GetById(itemRequest.Id, item=>item.Category);
+            if(itemToUpdate == null) throw new ItemNotFoundException("Requested Item Not Found");
                                                             
-            var category = _unitOfWork.CategoryRepository.GetById((int)itemRequest.CategoryId)                                                                                                                                                                          
-            ?? throw new DbUpdateException("Category Not Found! Provide the correct category id");
-            
             _mapper.Map(itemRequest, itemToUpdate , opts=>{
                 opts.BeforeMap((src, dst)=>{
                     dst.ModifiedAt = DateTime.Now;
@@ -87,16 +82,21 @@ namespace asp_net_web_api.API.Services
                  _unitOfWork.ItemsRepository.Update(itemToUpdate);
                 _unitOfWork.Complete();
             }
-            catch (DbUpdateException){
-                    throw;
+            catch(DbUpdateException ex){
+                if (ex.InnerException is SqliteException){
+                   throw new CategoryNotFoundException("Category Not found");
+                }
+                throw ex;
             }
             
-            var responseItemDto = _mapper.Map<ItemDto>(itemToUpdate);
+            var updatedItem = _unitOfWork.ItemsRepository.GetById(itemRequest.Id, item=>item.Category);
+            var responseItemDto = _mapper.Map<ItemDto>(updatedItem);
+
             return responseItemDto;
         }
 
-        private static IQueryable<InventoryItem> handleQuery(IQueryable<InventoryItem> inventoryItems, ProductQueryParameters queryParameters){
-
+        private static IQueryable<InventoryItem> handleQuery(IQueryable<InventoryItem> inventoryItems, ProductQueryParameters queryParameters)
+        {
             if(queryParameters.MinPrice != null){
                 inventoryItems = inventoryItems.Where(p => p.Price >= queryParameters.MinPrice);
             }
