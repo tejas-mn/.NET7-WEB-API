@@ -6,6 +6,9 @@ using asp_net_web_api.API.Services;
 using asp_net_web_api.API.Respository;
 using asp_net_web_api.API.Mappings;
 using asp_net_web_api.API.Middlewares;
+using System.Net;
+using Microsoft.AspNetCore.Diagnostics;
+using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,17 +43,37 @@ builder.Services.AddSwaggerGen(c => {
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment()){
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
 app.UseHttpsRedirection();
+
+app.UseAuthorization();
 
 app.UseCustomExceptionHandlingMiddleware();
 
-app.UseAuthorization();
+// Configure the HTTP request pipeline.
+// if (app.Environment.IsDevelopment()){
+  
+//     app.UseSwagger();
+//     app.UseSwaggerUI();
+// }
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
+// else{
+//     //inbuilt middleware
+//     app.UseExceptionHandler((options)=>{
+//         options.Run(
+//             async (context) => {
+//                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+//                 var ex = context.Features.Get<IExceptionHandlerFeature>();
+//                 context.Response.ContentType = "application/json";
+//                 await context.Response.WriteAsync(JsonConvert.SerializeObject(new {error = ex.Error.Message}));
+//             }
+//         );
+//     });
+//     app.UseSwagger();
+//     app.UseSwaggerUI();
+// }
 
 app.MapControllers();
 

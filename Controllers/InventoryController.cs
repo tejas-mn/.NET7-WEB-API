@@ -1,8 +1,6 @@
-using System;
 using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
-using asp_net_web_api.API.Utility;
 using asp_net_web_api.API.ErrorHandling;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,7 +23,6 @@ namespace asp_net_web_api.API.Controllers
         public IActionResult GetInventoryItems([FromQuery] ProductQueryParameters queryParameters)
         {
             var inventoryItems = _inventoryService.getInventoryItems(queryParameters);
-            _logger.LogInformation("GetInventoryItems invoked");
             return Ok(inventoryItems);
         }
 
@@ -34,46 +31,24 @@ namespace asp_net_web_api.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(object))]
         public IActionResult GetInventoryItem(int id)
         {
-            try{
-                var item =  _inventoryService.getInventoryItem(id);
-                return Ok(item);
-            }catch(ItemNotFoundException ex){
-                _logger.LogError(ex, "An error occurred in GetInventoryItem");
-                return NotFound($"Item  {id} not found");
-            }
+            var item =  _inventoryService.getInventoryItem(id);
+            return Ok(item);
         }
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CreateItemResponseDto))]
         public  ActionResult<CreateItemResponseDto> AddInventoryItem(CreateItemRequestDto item)
         {
-            try{
-                var newItem = _inventoryService.addInventoryItem(item);
-                _logger.LogInformation("addInventoryItem invoked");
-                return Ok(newItem);
-            }catch(CategoryNotFoundException ex){
-                _logger.LogError(ex, "An error occurred in updateInventoryItem");
-                return NotFound($"Category  {item.CategoryId} not found");
-            }catch(Exception ex){
-                _logger.LogError(ex, "An error occurred in updateInventoryItem");
-                return StatusCode(500, "Internal Servor Error");
-            }
-
+            var newItem = _inventoryService.addInventoryItem(item);
+            return Ok(newItem);
         }
 
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(object))]
         public IActionResult DeleteInventoryItem(int id)
         {
-            try{
-                var item = _inventoryService.deleteInventoryItem(id);
-                _logger.LogInformation("DeleteInventoryItem invoked");
-                return Ok("Item deleted");
-            }catch(ItemNotFoundException ex){
-                _logger.LogError(ex, "An error occurred in deleteInventoryItem");
-                return NotFound(ex.Message);
-            }
-
+            var item = _inventoryService.deleteInventoryItem(id);
+            return Ok("Item deleted");
         }
 
         [HttpPut("{id}")]
@@ -83,7 +58,6 @@ namespace asp_net_web_api.API.Controllers
             if (id != itemRequest.Id) return BadRequest("Wrong item id on request and url");
             try{
                 var updatedItemDto =  _inventoryService.updateInventoryItem(id, itemRequest); 
-                _logger.LogInformation("UpdateInventoryItem invoked");
                 return Ok(updatedItemDto);
             }catch(ItemNotFoundException ex){
                 _logger.LogError(ex, "An error occurred in updateInventoryItem");

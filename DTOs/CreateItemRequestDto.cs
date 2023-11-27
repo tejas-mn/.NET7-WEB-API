@@ -4,6 +4,7 @@ namespace asp_net_web_api.API.DTO
 {
     public class CreateItemRequestDto
     {
+        [Required]
         public int Id { get; set; }
 
         [Required]

@@ -25,6 +25,11 @@ namespace  asp_net_web_api.API.Respository
         {
             return _dbContext.SaveChanges();
         }
+        
+        public async Task<bool> SaveAsync()
+        {
+                return await _dbContext.SaveChangesAsync() > 0;
+        }
 
         public void Dispose()
         {

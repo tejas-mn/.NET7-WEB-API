@@ -12,10 +12,13 @@ namespace asp_net_web_api.API.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        
-        public InventoryService(IUnitOfWork unitOfWork, IMapper mapper){
+
+        public ILogger<InventoryService> Logger { get; }
+
+        public InventoryService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<InventoryService> logger){
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            Logger = logger;
         }
 
         public List<ItemDto> getInventoryItems(ProductQueryParameters queryParameters)
@@ -35,6 +38,12 @@ namespace asp_net_web_api.API.Services
 
         public CreateItemResponseDto? addInventoryItem(CreateItemRequestDto itemRequest)
         {
+            var itemExists = getInventoryItem(itemRequest.Id);
+            if(itemExists!=null) throw new Exception($"Item {itemRequest.Id} already exists");
+            
+            var categoryExists = _unitOfWork.CategoryRepository.GetById(itemRequest.CategoryId);
+            if(categoryExists==null) throw new CategoryNotFoundException($"Category {itemRequest.CategoryId} Not found");
+
             InventoryItem item = _mapper.Map<InventoryItem>(itemRequest);
             item.CreatedAt=item.ModifiedAt=DateTime.Now;
             
@@ -44,13 +53,13 @@ namespace asp_net_web_api.API.Services
                 _unitOfWork.Complete();
             }
             catch(DbUpdateException ex){
-                if (ex.InnerException is SqliteException){
+                 if (ex.InnerException is SqliteException){
                     throw new CategoryNotFoundException($"Category {itemRequest.CategoryId} Not found");
-                }
-                throw ex;
+                 }
+                 throw ex;
             }
 
-            var addedItem = _unitOfWork.ItemsRepository.GetById(itemRequest.Id, item=>item.Category);
+            var addedItem = getInventoryItem(itemRequest.Id);
             var response = _mapper.Map<CreateItemResponseDto>(addedItem);
 
             return response;
@@ -89,7 +98,7 @@ namespace asp_net_web_api.API.Services
                 throw ex;
             }
             
-            var updatedItem = _unitOfWork.ItemsRepository.GetById(itemRequest.Id, item=>item.Category);
+            var updatedItem = getInventoryItem(itemRequest.Id);
             var responseItemDto = _mapper.Map<ItemDto>(updatedItem);
 
             return responseItemDto;

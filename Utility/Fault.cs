@@ -1,16 +1,28 @@
 using System;
 using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace asp_net_web_api.API.Utility {
 
-    public class Fault : Exception {
+    public class Fault  {
+        public Fault(string? message, string? stackTrace = null) 
+        {
+            ErrorMessage = message;
+            ErrorTrace = stackTrace;
+        }
+
         public string? ContextId { get; set; } = Guid.NewGuid().ToString();
-        public string? Message { get; set; }
+        public string? ErrorMessage { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public List<string>? Errors { get; set; }
+        public string? ErrorTrace{ get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public List<string>? Warnings { get; set; }
+        public  List<string>? Errors { get; set; }
+        
+        public  List<string>? Warnings { get; set; }
+
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
     }
 }

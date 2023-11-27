@@ -13,6 +13,7 @@ namespace asp_net_web_api.API.Models
         public string Name { get; set; } = string.Empty;
 
         [Required]
+        [StringLength(50, MinimumLength = 2)]
         public string Description { get; set; } = string.Empty;
 
         public decimal Price { get; set; }
