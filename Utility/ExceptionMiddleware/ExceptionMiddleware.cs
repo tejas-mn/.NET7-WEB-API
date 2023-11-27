@@ -15,18 +15,17 @@ namespace asp_net_web_api.API.Middlewares
     public class ExceptionHandlingMiddleware : IMiddleware
     {
         private readonly ILogger<ExceptionHandlingMiddleware> _logger;
-        
+        private IHostEnvironment _env { get; }
+
         public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger, IHostEnvironment env){
             _logger = logger;
-            Env = env;
+            _env = env;
         }
-
-        public IHostEnvironment Env { get; }
 
         public async Task InvokeAsync(HttpContext context, RequestDelegate next)
         {   
             LogRequest(context);
-            
+
             #region comment
             //Get request stream and reset the position of this stream
             // Stream requestBodyStream = context.Request.Body;
@@ -48,12 +47,13 @@ namespace asp_net_web_api.API.Middlewares
             }
             catch (Exception ex){
                 _logger.LogError(ex, ex.Message);
+
                 if(ex.InnerException!=null)
-                    _logger.LogInformation("xxxxxxxxxx: " + ex.InnerException.Message.Substring(18, 24));
+                    _logger.LogError("Inner Exception: " + ex.InnerException.Message.Substring(18, 24));
 
                 Fault f;
                 var exceptionType = ex.GetType();
-                string message = "Internal server error";
+                string message = ex.Message;
 
                 HttpStatusCode StatusCode = HttpStatusCode.InternalServerError;
 
@@ -67,7 +67,7 @@ namespace asp_net_web_api.API.Middlewares
                     message = ex.Message;
                 }
 
-                if(Env.IsDevelopment()){
+                if(_env.IsDevelopment()){
                     f = new Fault(message);
                 }else{
                     f = new Fault(message, ex.StackTrace.ToString());

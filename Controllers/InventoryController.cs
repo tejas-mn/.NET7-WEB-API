@@ -11,11 +11,9 @@ namespace asp_net_web_api.API.Controllers
     public class InventoryController : ControllerBase
     {
         private readonly IInventoryService _inventoryService;
-        private readonly ILogger<InventoryController> _logger;
-
-        public InventoryController(IInventoryService inventoryService, ILogger<InventoryController> logger){
+        
+        public InventoryController(IInventoryService inventoryService){
             _inventoryService = inventoryService;
-            _logger = logger;
         }
 
         [HttpGet]
@@ -31,15 +29,17 @@ namespace asp_net_web_api.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(object))]
         public IActionResult GetInventoryItem(int id)
         {
+            if (id==0) return BadRequest("Id 0 not allowed.");
             var item =  _inventoryService.getInventoryItem(id);
             return Ok(item);
         }
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CreateItemResponseDto))]
-        public  ActionResult<CreateItemResponseDto> AddInventoryItem(CreateItemRequestDto item)
+        public  ActionResult<CreateItemResponseDto> AddInventoryItem(CreateItemRequestDto itemRequest)
         {
-            var newItem = _inventoryService.addInventoryItem(item);
+            if (itemRequest.Id==0) return BadRequest("Id 0 not allowed.");
+            var newItem = _inventoryService.addInventoryItem(itemRequest);
             return Ok(newItem);
         }
 
@@ -47,28 +47,19 @@ namespace asp_net_web_api.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(object))]
         public IActionResult DeleteInventoryItem(int id)
         {
+            if(id==0) return BadRequest("Id 0 not allowed.");
             var item = _inventoryService.deleteInventoryItem(id);
-            return Ok("Item deleted");
+            return Ok($"Item {id} deleted");
         }
 
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(object))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(object))]
         public ActionResult<ItemDto> UpdateInventoryItem(int id, CreateItemRequestDto itemRequest){
-            if (id != itemRequest.Id) return BadRequest("Wrong item id on request and url");
-            try{
-                var updatedItemDto =  _inventoryService.updateInventoryItem(id, itemRequest); 
-                return Ok(updatedItemDto);
-            }catch(ItemNotFoundException ex){
-                _logger.LogError(ex, "An error occurred in updateInventoryItem");
-                return NotFound($"Item  {itemRequest.Id} not found");
-            }catch(CategoryNotFoundException ex){
-                _logger.LogError(ex, "An error occurred in updateInventoryItem");
-                return NotFound($"Category {itemRequest.CategoryId} not found");
-            }catch(Exception ex){
-                _logger.LogError(ex, "An error occurred in updateInventoryItem");
-                return StatusCode(500, "Internal Servor Error");
-            }
+            if (id != itemRequest.Id || itemRequest.Id==0) return BadRequest($"Wrong item id {itemRequest.Id} in request and url");
+            var updatedItemDto =  _inventoryService.updateInventoryItem(id, itemRequest); 
+            return Ok(updatedItemDto);
+         
         }
     }
 }
