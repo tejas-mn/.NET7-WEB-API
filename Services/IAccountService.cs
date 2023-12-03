@@ -1,0 +1,10 @@
+using asp_net_web_api.API.DTO;
+using asp_net_web_api.API.Models;
+
+namespace asp_net_web_api.API.Services
+{
+    public interface IAccountService
+    {
+        public Task<LoginResponseDto?> Login(LoginRequestDto loginRequest);
+    }
+}

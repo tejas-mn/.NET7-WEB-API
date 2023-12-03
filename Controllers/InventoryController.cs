@@ -3,12 +3,12 @@ using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
 using asp_net_web_api.API.ErrorHandling;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace asp_net_web_api.API.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class InventoryController : ControllerBase
+    [Authorize]
+    public class InventoryController : BaseController
     {
         private readonly IInventoryService _inventoryService;
         

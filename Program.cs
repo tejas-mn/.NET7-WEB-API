@@ -9,6 +9,9 @@ using asp_net_web_api.API.Middlewares;
 using System.Net;
 using Microsoft.AspNetCore.Diagnostics;
 using Newtonsoft.Json;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +28,7 @@ builder.Services.AddTransient(typeof(IGenericRepository<>), typeof(GenericReposi
 builder.Services.AddTransient<IItemRepository, ItemRepository>();
 builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
 builder.Services.AddTransient<IInventoryService, InventoryService>();
+builder.Services.AddTransient<IAccountService, AccountService>();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddTransient<ExceptionHandlingMiddleware>();
 
@@ -41,10 +45,23 @@ builder.Services.AddSwaggerGen(c => {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Inventory Management API", Version = "v1" });
 });
 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(opt => {
+    var secret = builder.Configuration.GetSection("AppSettings:Key").Value; 
+    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+    opt.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        IssuerSigningKey = key
+    };
+});
 var app = builder.Build();
 
 app.UseHttpsRedirection();
 
+app.UseCors();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseCustomExceptionHandlingMiddleware();

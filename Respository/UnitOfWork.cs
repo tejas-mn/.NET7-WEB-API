@@ -8,12 +8,14 @@ namespace  asp_net_web_api.API.Respository
         private bool _disposed = false;
         public IItemRepository ItemsRepository {get; private set;}
         public ICategoryRepository CategoryRepository {get; private set;}
+        public IUserRepository UserRepository {get; set;}
 
         public UnitOfWork(AppDbContext context)
         {
             _dbContext = context;
             ItemsRepository = new ItemRepository(_dbContext);
             CategoryRepository = new CategoryRepository(_dbContext);
+            UserRepository = new UserRepository(_dbContext);
         }
 
         public IUnitOfWork Create()
