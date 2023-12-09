@@ -1,7 +1,6 @@
 using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
-using asp_net_web_api.API.ErrorHandling;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 
@@ -11,11 +10,15 @@ namespace asp_net_web_api.API.Controllers
     public class InventoryController : BaseController
     {
         private readonly IInventoryService _inventoryService;
-        
         public InventoryController(IInventoryService inventoryService){
             _inventoryService = inventoryService;
         }
-
+        /// <summary>
+        /// Your API endpoint description.
+        /// </summary>
+        /// <remarks>Additional information about the endpoint.</remarks>
+        /// <param name="input">Input parameter description.</param>
+        /// <returns>Return value description.</returns>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<ItemDto>))]
         public IActionResult GetInventoryItems([FromQuery] ProductQueryParameters queryParameters)

@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using System.Linq;
 
-namespace asp_net_web_api.API.Models
+namespace asp_net_web_api.API.Utility
 {
  public static class IQueryableExtensions
     {

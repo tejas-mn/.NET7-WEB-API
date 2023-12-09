@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using asp_net_web_api.API.Models;
@@ -6,12 +5,10 @@ using asp_net_web_api.API.Services;
 using asp_net_web_api.API.Respository;
 using asp_net_web_api.API.Mappings;
 using asp_net_web_api.API.Middlewares;
-using System.Net;
-using Microsoft.AspNetCore.Diagnostics;
-using Newtonsoft.Json;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
+using asp_net_web_api.API.Utility;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,7 +39,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>{
 });
 
 builder.Services.AddSwaggerGen(c => {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Inventory Management API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = ".NET WEB API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+    {                                
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT Authorization header. \r\n\r\n Enter the token in the text input below.",
+    });
+    c.OperationFilter<AuthorizationHeaderParameterOperationFilter>();
 });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(opt => {
@@ -53,9 +60,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidateIssuerSigningKey = true,
         ValidateIssuer = false,
         ValidateAudience = false,
-        IssuerSigningKey = key
+        IssuerSigningKey = key,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
     };
 });
+
 var app = builder.Build();
 
 app.UseHttpsRedirection();
@@ -74,7 +84,10 @@ app.UseCustomExceptionHandlingMiddleware();
 // }
 
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(c => {
+    // c.ConfigObject.AdditionalItems["sendHeaders"] = true;
+}
+);
 
 // else{
 //     //inbuilt middleware

@@ -1,10 +1,7 @@
 using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Respository;
-using asp_net_web_api.API.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Data.Sqlite;
-using AutoMapper;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
