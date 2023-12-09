@@ -6,5 +6,6 @@ namespace asp_net_web_api.API.Services
     public interface IAccountService
     {
         public Task<LoginResponseDto?> Login(LoginRequestDto loginRequest);
+        public Task<UserDto?> Register(LoginRequestDto loginReq);
     }
 }

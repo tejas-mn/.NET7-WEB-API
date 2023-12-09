@@ -20,9 +20,22 @@ namespace asp_net_web_api.API.Services
         }
 
         public async Task<LoginResponseDto?> Login(LoginRequestDto loginReq){
-            var user = await _unitOfWork.UserRepository.Table.FirstOrDefaultAsync( u=>u.Name==loginReq.Name && u.Password==loginReq.Password);
+            var user = await _unitOfWork.UserRepository.Login(loginReq.Name, loginReq.Password);
             if(user==null) return null;
             return new LoginResponseDto(){ Name=user.Name, Token = CreateJWT(user)};
+        }
+
+        public async Task<UserDto?> Register(LoginRequestDto loginReq){
+            var user = await _unitOfWork.UserRepository.UserAlreadyExists(loginReq.Name);
+            if(user==true) return null;
+            
+            _unitOfWork.UserRepository.Register(loginReq.Name, loginReq.Password);
+            _unitOfWork.Complete();
+            
+            return new UserDto(){
+                Name = loginReq.Name, 
+                CreatedAt = DateTime.UtcNow
+            };
         }
 
         private string CreateJWT(User user){

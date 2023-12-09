@@ -15,10 +15,20 @@ namespace asp_net_web_api.API.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginRequestDto loginRequest){
+        public async Task<IActionResult> Login(LoginRequestDto loginRequest)
+        {
             var authUser = await AccountService.Login(loginRequest);
             if(authUser==null) return Unauthorized();
             return Ok(authUser);
         }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(LoginRequestDto loginRequest)
+        {
+            var user = await AccountService.Register(loginRequest);
+            if(user == null) return BadRequest("User already exists");
+            return Ok(user);
+        }
+
     }
 }

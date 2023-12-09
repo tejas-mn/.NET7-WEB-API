@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using asp_net_web_api.API.Utility;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,6 +50,12 @@ builder.Services.AddSwaggerGen(c => {
         In = ParameterLocation.Header,
         Description = "JWT Authorization header. \r\n\r\n Enter the token in the text input below.",
     });
+    
+    // Set the comments path for the Swagger JSON and UI.
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
+    
     c.OperationFilter<AuthorizationHeaderParameterOperationFilter>();
 });
 
