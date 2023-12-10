@@ -2,6 +2,8 @@ using System.Text;
 using asp_net_web_api.API.Utility;
 using asp_net_web_api.API.ErrorHandling;
 using System.Net;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace asp_net_web_api.API.Middlewares
 {
@@ -9,10 +11,12 @@ namespace asp_net_web_api.API.Middlewares
     {
         private readonly ILogger<ExceptionHandlingMiddleware> _logger;
         private IHostEnvironment _env { get; }
+        public IConfiguration _config { get; }
 
-        public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger, IHostEnvironment env){
+        public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger, IHostEnvironment env, IConfiguration config){
             _logger = logger;
             _env = env;
+            _config = config;
         }
 
         public async Task InvokeAsync(HttpContext context, RequestDelegate next)
@@ -35,6 +39,7 @@ namespace asp_net_web_api.API.Middlewares
             #endregion 
         
             try{
+                if(context.Request.Path.ToString().Contains("api/Inventory"))  validateJWT(context);
                 await next(context);
                 LogResponse(context);
             }
@@ -83,8 +88,10 @@ namespace asp_net_web_api.API.Middlewares
             requestLog.AppendLine($"Host: {request.Host}");
             requestLog.AppendLine($"Content-Type: {request.ContentType}");
             requestLog.AppendLine($"Content-Length: {request.ContentLength}");
-
+            
             _logger.LogInformation(requestLog.ToString());
+            // var userAccesstoken = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            // _logger.LogInformation("ACCESS TOKEN: " + userAccesstoken);
         }
 
         private void LogResponse(HttpContext context)
@@ -100,6 +107,34 @@ namespace asp_net_web_api.API.Middlewares
             _logger.LogInformation(responseLog.ToString());
         }
 
+        private  void validateJWT(HttpContext context)
+        {
+            var userAccesstoken = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var secret = _config.GetSection("AppSettings:Key").Value; 
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+                var tokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    IssuerSigningKey = key,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                try
+                {
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    tokenHandler.ValidateToken(userAccesstoken, tokenValidationParameters, out _);
+                }
+                catch (Exception ex)
+                {
+                    // Fault f = new Fault("Invalid jwt token!");
+                    // context.Response.ContentType = "application/json";
+                    // await context.Response.WriteAsync(f.ToString());
+                    throw ex;
+                }
+        }
     }
 
     public static class ExceptionHandlingMiddlewareExtensions{

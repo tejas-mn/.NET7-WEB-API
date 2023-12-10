@@ -29,6 +29,7 @@ builder.Services.AddTransient<IInventoryService, InventoryService>();
 builder.Services.AddTransient<IAccountService, AccountService>();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddTransient<ExceptionHandlingMiddleware>();
+builder.Services.AddSingleton<TokenStoreCache>();
 
 builder.Services.AddMvc(options => {
    options.SuppressAsyncSuffixInActionNames = false;
