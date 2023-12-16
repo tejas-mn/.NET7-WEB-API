@@ -7,14 +7,13 @@ using asp_net_web_api.API.Utility;
 
 namespace asp_net_web_api.API.Controllers
 {
-    // [Authorize]
+    [Authorize]
     public class InventoryController : BaseController
     {
-        private readonly TokenStoreCache cc;
         private readonly IInventoryService _inventoryService;
-        public InventoryController(IInventoryService inventoryService, TokenStoreCache cx){
+        public InventoryController(IInventoryService inventoryService){
             _inventoryService = inventoryService;
-             cc = cx;
+            
         }
 
         /// <summary>
@@ -29,8 +28,6 @@ namespace asp_net_web_api.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<ItemDto>))]
         public IActionResult GetInventoryItems([FromQuery] ProductQueryParameters queryParameters)
         {
-            var userAccesstoken = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            if (!cc.Store.ContainsKey(userAccesstoken)) return Unauthorized("you have logged out!");
             var inventoryItems = _inventoryService.getInventoryItems(queryParameters);
             return Ok(inventoryItems);
         }

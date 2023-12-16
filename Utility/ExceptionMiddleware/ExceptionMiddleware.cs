@@ -12,34 +12,25 @@ namespace asp_net_web_api.API.Middlewares
         private readonly ILogger<ExceptionHandlingMiddleware> _logger;
         private IHostEnvironment _env { get; }
         public IConfiguration _config { get; }
+        private readonly TokenStoreCache cc;
 
-        public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger, IHostEnvironment env, IConfiguration config){
+        public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger, IHostEnvironment env, IConfiguration config, TokenStoreCache cx){
             _logger = logger;
             _env = env;
             _config = config;
+            cc = cx;
         }
 
         public async Task InvokeAsync(HttpContext context, RequestDelegate next)
         {   
             LogRequest(context);
-
-            #region comment
-            //Get request stream and reset the position of this stream
-            // Stream requestBodyStream = context.Request.Body;
-            // string requestBody = string.Empty;
-
-            // using (StreamReader sr = new StreamReader(requestBodyStream)){
-            //     requestBody = await sr.ReadToEndAsync();
-            // }
-
-            // _logger.LogInformation("req body: " + requestBody);
-
-
-            // _logger.LogInformation("req body: "+requestBody);
-            #endregion 
         
             try{
-                if(context.Request.Path.ToString().Contains("api/Inventory"))  validateJWT(context);
+                if(context.Request.Path.ToString().Contains("api/Inventory")){
+                    var userAccesstoken = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                    if (!cc.Store.ContainsKey(userAccesstoken)) throw new Exception("Already Logged out or invalid jwt exception");
+                    validateJWT(context);
+                }
                 await next(context);
                 LogResponse(context);
             }
@@ -90,8 +81,6 @@ namespace asp_net_web_api.API.Middlewares
             requestLog.AppendLine($"Content-Length: {request.ContentLength}");
             
             _logger.LogInformation(requestLog.ToString());
-            // var userAccesstoken = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            // _logger.LogInformation("ACCESS TOKEN: " + userAccesstoken);
         }
 
         private void LogResponse(HttpContext context)
@@ -110,6 +99,7 @@ namespace asp_net_web_api.API.Middlewares
         private  void validateJWT(HttpContext context)
         {
             var userAccesstoken = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
             var secret = _config.GetSection("AppSettings:Key").Value; 
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
                 var tokenValidationParameters = new TokenValidationParameters
@@ -129,9 +119,6 @@ namespace asp_net_web_api.API.Middlewares
                 }
                 catch (Exception ex)
                 {
-                    // Fault f = new Fault("Invalid jwt token!");
-                    // context.Response.ContentType = "application/json";
-                    // await context.Response.WriteAsync(f.ToString());
                     throw ex;
                 }
         }

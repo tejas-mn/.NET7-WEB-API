@@ -53,8 +53,6 @@ namespace asp_net_web_api.API.Services
                 RefreshToken = CreateRefreshToken()
             };
 
-            // TokenStore[loginResponse.AccessToken] = loginResponse.RefreshToken;
-             
             if (!cc.Store.ContainsKey(loginResponse.AccessToken)){
                 cc.Store.Add(loginResponse.AccessToken, loginResponse.RefreshToken);
             }
@@ -114,7 +112,7 @@ namespace asp_net_web_api.API.Services
             if(cc.Store.TryGetValue(refreshRequest.AccessToken, out var storedRefreshToken))
             {
                 if(refreshRequest.RefreshToken != storedRefreshToken) return null;
-                
+
                 var secret = _config.GetSection("AppSettings:Key").Value; 
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
                 var tokenValidationParameters = new TokenValidationParameters
