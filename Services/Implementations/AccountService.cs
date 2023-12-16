@@ -14,33 +14,14 @@ namespace asp_net_web_api.API.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _config;
-        private static Dictionary<string, string>? cache;
-        private static object cacheLock = new object();
-        public Dictionary<string,string> TokenStore
-        {
-            get
-            {
-                lock (cacheLock)
-                {
-                    if (cache == null)
-                    {
-                        cache = new Dictionary<string, string>();
-                    }
-                    return cache;
-                }
-            }
-        }
-
-        private readonly TokenStoreCache cc;
-
+        private readonly TokenStoreCache _tokenStore;
         private readonly ILogger<AccountService> _logger;
 
-        public AccountService(IUnitOfWork unitOfWork,  IConfiguration config, ILogger<AccountService> logger, TokenStoreCache cx){
+        public AccountService(IUnitOfWork unitOfWork,  IConfiguration config, ILogger<AccountService> logger, TokenStoreCache tokenStore){
             _unitOfWork = unitOfWork;
             _config = config;
             _logger = logger;
-            cc = cx;
-            
+            _tokenStore = tokenStore;
         }
 
         public async Task<LoginResponseDto?> Login(LoginRequestDto loginReq){
@@ -52,13 +33,8 @@ namespace asp_net_web_api.API.Services
                 AccessToken = CreateJWTAccessToken(user.Name, user.Id), 
                 RefreshToken = CreateRefreshToken()
             };
-
-            if (!cc.Store.ContainsKey(loginResponse.AccessToken)){
-                cc.Store.Add(loginResponse.AccessToken, loginResponse.RefreshToken);
-            }
-            foreach(var x in cc.Store)
-            {
-                _logger.LogInformation(x.Key + " " + ", "+ x.Value);
+            if (!_tokenStore.Store.ContainsKey(loginResponse.AccessToken)){
+                _tokenStore.Store.Add(loginResponse.AccessToken, loginResponse.RefreshToken);
             }
             return loginResponse;
         }
@@ -66,10 +42,8 @@ namespace asp_net_web_api.API.Services
         public async Task<UserDto?> Register(LoginRequestDto loginReq){
             var user = await _unitOfWork.UserRepository.UserAlreadyExists(loginReq.Name);
             if(user==true) return null;
-            
             _unitOfWork.UserRepository.Register(loginReq.Name, loginReq.Password);
             _unitOfWork.Complete();
-            
             return new UserDto(){
                 Name = loginReq.Name, 
                 CreatedAt = DateTime.UtcNow
@@ -100,16 +74,16 @@ namespace asp_net_web_api.API.Services
 
         public bool Logout(string userAccesstoken)
         {
-            if(!cc.Store.ContainsKey(userAccesstoken)){
+            if(!_tokenStore.Store.ContainsKey(userAccesstoken)){
                 return false;
             }
-            cc.Store.Remove(userAccesstoken);
+            _tokenStore.Store.Remove(userAccesstoken);
             return true;
         }
 
         public async Task<LoginResponseDto?> Refresh(LoginResponseDto refreshRequest)
         {
-            if(cc.Store.TryGetValue(refreshRequest.AccessToken, out var storedRefreshToken))
+            if(_tokenStore.Store.TryGetValue(refreshRequest.AccessToken, out var storedRefreshToken))
             {
                 if(refreshRequest.RefreshToken != storedRefreshToken) return null;
 
@@ -125,13 +99,11 @@ namespace asp_net_web_api.API.Services
                     ClockSkew = TimeSpan.Zero
                 };
 
-                try
-                {
+                try{
                     var tokenHandler = new JwtSecurityTokenHandler();
                     tokenHandler.ValidateToken(refreshRequest.AccessToken, tokenValidationParameters, out _);
                 }
-                catch (Exception)
-                {
+                catch (Exception){
                     return null;
                 }
 
@@ -139,9 +111,8 @@ namespace asp_net_web_api.API.Services
                 if(!userExists) return null;
             
                 var newAccessToken = CreateJWTAccessToken(refreshRequest.Name, refreshRequest.Id);
-                cc.Store.Add(newAccessToken, storedRefreshToken);
-                cc.Store.Remove(refreshRequest.AccessToken);
-
+                _tokenStore.Store.Add(newAccessToken, storedRefreshToken);
+                _tokenStore.Store.Remove(refreshRequest.AccessToken);
                 return new LoginResponseDto(){
                     Id = refreshRequest.Id,
                     Name = refreshRequest.Name, 

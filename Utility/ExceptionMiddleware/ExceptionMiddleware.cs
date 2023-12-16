@@ -28,7 +28,7 @@ namespace asp_net_web_api.API.Middlewares
             try{
                 if(context.Request.Path.ToString().Contains("api/Inventory")){
                     var userAccesstoken = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                    if (!cc.Store.ContainsKey(userAccesstoken)) throw new Exception("Already Logged out or invalid jwt exception");
+                    if (!cc.Store.ContainsKey(userAccesstoken)) throw new UnauthorizedAccessException("Already Logged out or invalid jwt exception");
                     validateJWT(context);
                 }
                 await next(context);
@@ -53,6 +53,11 @@ namespace asp_net_web_api.API.Middlewares
 
                 if(exceptionType == typeof(CategoryNotFoundException)){
                     StatusCode = HttpStatusCode.NotFound;
+                    message = ex.Message;
+                }
+
+                if(exceptionType == typeof(UnauthorizedAccessException)){
+                    StatusCode = HttpStatusCode.Unauthorized;
                     message = ex.Message;
                 }
 

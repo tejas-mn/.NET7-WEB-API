@@ -11,7 +11,7 @@ namespace asp_net_web_api.API.Controllers
     public class AuthController : BaseController
     {
         private readonly IAccountService _accountService;
-      
+         
         public AuthController(IAccountService accountService)
         {
             _accountService = accountService;
@@ -21,7 +21,19 @@ namespace asp_net_web_api.API.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequest)
         {
             var authUser = await _accountService.Login(loginRequest);
+
             if(authUser==null) return Unauthorized("Invalid credentials");
+            
+            CookieOptions cookieOptions = new CookieOptions {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.Now.AddMinutes(5) 
+            };
+
+            HttpContext.Response.Cookies.Append("access_token", authUser.AccessToken, cookieOptions);
+            HttpContext.Response.Cookies.Append("refresh_token", authUser.RefreshToken, cookieOptions);
+            
             return Ok(authUser);
         }
 
@@ -33,7 +45,7 @@ namespace asp_net_web_api.API.Controllers
             return Ok(user);
         }
 
-        // [Authorize]
+        [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
@@ -43,12 +55,12 @@ namespace asp_net_web_api.API.Controllers
             return Ok("Logged out succesfully!");
         }
 
-        // [Authorize]
+        [Authorize]
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh([FromBody] LoginResponseDto refreshRequest)
         {
             var response = await _accountService.Refresh(refreshRequest);
-            if(response == null) return BadRequest("Error while refreshing! AccessToken coulb be expired");
+            if(response == null) return BadRequest("Error while refreshing! AccessToken could be expired");
             return Ok(response);
         }
     }
