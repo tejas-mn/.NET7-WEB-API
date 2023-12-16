@@ -1,21 +1,29 @@
 using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
-using asp_net_web_api.API.ErrorHandling;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using asp_net_web_api.API.Utility;
 
 namespace asp_net_web_api.API.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class InventoryController : ControllerBase
+    [Authorize]
+    public class InventoryController : BaseController
     {
         private readonly IInventoryService _inventoryService;
-        
         public InventoryController(IInventoryService inventoryService){
             _inventoryService = inventoryService;
+            
         }
 
+        /// <summary>
+        /// Get list of all the items present in Inventory
+        /// </summary>
+        /// <remarks>Get list of all the items present in Inventory</remarks>
+        /// <returns>Returns list of items.</returns>
+        /// <response code="200">Returns list of items.</response>
+        /// <response code="400">If there are no items.</response>  
+        
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<ItemDto>))]
         public IActionResult GetInventoryItems([FromQuery] ProductQueryParameters queryParameters)
@@ -53,13 +61,12 @@ namespace asp_net_web_api.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(object))]
-        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(object))]
+        [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ItemDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ItemDto))]
         public ActionResult<ItemDto> UpdateInventoryItem(int id, CreateItemRequestDto itemRequest){
             if (id != itemRequest.Id || itemRequest.Id==0) return BadRequest($"Wrong item id {itemRequest.Id} in request and url");
             var updatedItemDto =  _inventoryService.updateInventoryItem(id, itemRequest); 
             return Ok(updatedItemDto);
-         
         }
     }
 }

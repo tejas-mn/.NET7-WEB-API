@@ -26,6 +26,7 @@ namespace asp_net_web_api.API.Models
         
         public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<Category> Categories { get; set; }
+        public DbSet<User> Users {get; set;}
     }
     
 }

@@ -3,7 +3,7 @@ using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Respository;
 using asp_net_web_api.API.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Data.Sqlite;
+using asp_net_web_api.API.Utility;
 using AutoMapper;
 
 namespace asp_net_web_api.API.Services
@@ -127,7 +127,7 @@ namespace asp_net_web_api.API.Services
                 .Skip(queryParameters.Size * (queryParameters.Page - 1))
                 .Take(queryParameters.Size);
 
-            return inventoryItems.Include(i => i.Category);
+            return inventoryItems;
         }
     }
 }
