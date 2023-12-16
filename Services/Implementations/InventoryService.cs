@@ -35,12 +35,11 @@ namespace asp_net_web_api.API.Services
 
         public CreateItemResponseDto? addInventoryItem(CreateItemRequestDto itemRequest)
         {
-            var itemExists =  _unitOfWork.ItemsRepository.GetById(itemRequest.Id)!=null;
-            if(itemExists) throw new Exception($"Item {itemRequest.Id} already exists");
-
-            var categoryNotFound = _unitOfWork.CategoryRepository.GetById(itemRequest.CategoryId)==null;
-            if(categoryNotFound) throw new CategoryNotFoundException($"Category {itemRequest.CategoryId} Not found");
-
+            var validator = new CreateItemRequestValidator(_unitOfWork);
+            var validationResult = validator.ValidateAndThrow(itemRequest);
+            
+            if (!validationResult.IsValid) throw new Exception("One or More Valdations failed");
+            
             InventoryItem item = _mapper.Map<InventoryItem>(itemRequest);
             item.CreatedAt=item.ModifiedAt=DateTime.Now;
 

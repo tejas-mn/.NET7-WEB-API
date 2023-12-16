@@ -35,39 +35,15 @@ namespace asp_net_web_api.API.Middlewares
                 LogResponse(context);
             }
             catch (Exception ex){
-                _logger.LogError(ex, ex.Message);
+                // _logger.LogError(ex, ex.Message);
 
-                if(ex.InnerException!=null)
-                    _logger.LogError("Inner Exception: " + ex.InnerException.Message.Substring(18, 24));
+                if(ex.InnerException!=null) _logger.LogError("Inner Exception: " + ex.InnerException.Message.Substring(18, 24));
 
-                Fault f;
-                var exceptionType = ex.GetType();
-                string message = ex.Message;
-
-                HttpStatusCode StatusCode = HttpStatusCode.InternalServerError;
-
-                if(exceptionType==typeof(ItemNotFoundException)){
-                    StatusCode = HttpStatusCode.NotFound;
-                    message = ex.Message;
-                }
-
-                if(exceptionType == typeof(CategoryNotFoundException)){
-                    StatusCode = HttpStatusCode.NotFound;
-                    message = ex.Message;
-                }
-
-                if(exceptionType == typeof(UnauthorizedAccessException)){
-                    StatusCode = HttpStatusCode.Unauthorized;
-                    message = ex.Message;
-                }
-
-                if(_env.IsDevelopment()){
-                    f = new Fault(message);
-                }else{
-                    f = new Fault(message, ex.StackTrace.ToString());
-                }
+                Fault f = new FaultFactory().GetFault(ex);
                 
-                context.Response.StatusCode = (int)StatusCode;
+                if(_env.IsDevelopment()) f.ErrorTrace = null;
+
+                context.Response.StatusCode = (int)f.StatusCode;
                 context.Response.ContentType = "application/json";
                
                 await context.Response.WriteAsync(f.ToString());

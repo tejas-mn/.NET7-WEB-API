@@ -21,7 +21,7 @@ namespace asp_net_web_api.API.Models
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.EnableSensitiveDataLogging();
+            // optionsBuilder.EnableSensitiveDataLogging();
         }
         
         public DbSet<InventoryItem> InventoryItems { get; set; }

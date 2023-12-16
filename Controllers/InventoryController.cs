@@ -13,7 +13,6 @@ namespace asp_net_web_api.API.Controllers
         private readonly IInventoryService _inventoryService;
         public InventoryController(IInventoryService inventoryService){
             _inventoryService = inventoryService;
-            
         }
 
         /// <summary>
