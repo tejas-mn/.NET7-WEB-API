@@ -56,5 +56,27 @@ namespace asp_net_web_api.API.Respository
         {
             return await _dbContext.Users.AnyAsync(u => u.Name == userName);
         }
+    
+        public List<string> GetUserRolesByUserId(int userId){
+            List<int> roleIds = _dbContext.UserRoles.Where(t => t.UserId == userId).Select(t => t.RoleId).AsEnumerable<int>().ToList<int>();
+            List<string> roles = new List<string>(); 
+            foreach(var id in roleIds){
+                roles.Add(_dbContext.Roles.Where(t => t.Id == id).Select(t => t.Name).First());
+            }
+            return roles;
+        }
+
+        public List<string> GetRolePermissionsByRoleId(int roleId){
+            List<int> permissionIds = _dbContext.RolePermissions.Where(t => t.RoleId == roleId).Select(t => t.PermissionId).AsEnumerable<int>().ToList<int>();
+            List<string> permissions = new List<string>(); 
+            foreach(var id in permissionIds){
+                permissions.Add(_dbContext.Permissions.Where(t => t.Id == id).Select(t => t.Name).First());
+            }
+            return permissions;
+        }
+
+        public int GetRoleIdByName(string role){
+            return _dbContext.Roles.Where(t => t.Name == role).Select(t=>t.Id).First();
+        }
     }
 }

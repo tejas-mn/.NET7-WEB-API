@@ -10,5 +10,7 @@ namespace asp_net_web_api.API.Models
         [Required]
         public required byte[] Password {get; set;}
         public required byte[] PasswordKey {get; set;}
+
+        public virtual IEnumerable<UserRole> UserRoles { get; set; }
     }
 }

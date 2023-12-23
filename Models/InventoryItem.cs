@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace asp_net_web_api.API.Models
 {
-    public class InventoryItem : BaseModel
+    public class Product : BaseModel
     {
         [Required]
         public string Sku { get; set; } = string.Empty;

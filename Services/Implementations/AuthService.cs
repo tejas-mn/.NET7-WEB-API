@@ -7,17 +7,18 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Security.Claims;
 using asp_net_web_api.API.Utility;
+using System.Security.Cryptography;
 
 namespace asp_net_web_api.API.Services
 {
-    public class AccountService : IAccountService
+    public class AuthService : IAuthService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _config;
         private readonly TokenStoreCache _tokenStore;
-        private readonly ILogger<AccountService> _logger;
+        private readonly ILogger<AuthService> _logger;
 
-        public AccountService(IUnitOfWork unitOfWork,  IConfiguration config, ILogger<AccountService> logger, TokenStoreCache tokenStore){
+        public AuthService(IUnitOfWork unitOfWork,  IConfiguration config, ILogger<AuthService> logger, TokenStoreCache tokenStore){
             _unitOfWork = unitOfWork;
             _config = config;
             _logger = logger;
@@ -50,19 +51,62 @@ namespace asp_net_web_api.API.Services
             };
         }
 
+        public async Task<bool> ForgotPassword(ForgotPasswordRequestDto forgotPasswordRequest){
+            // var user = await _unitOfWork.UserRepository.UserAlreadyExists(forgotPasswordRequest.Name);
+            var userr = _unitOfWork.UserRepository.Find(u => u.Name == forgotPasswordRequest.Name).FirstOrDefault();
+            if(userr==null) throw new Exception("User Not Found");
+            
+            byte[] passwordHash, passwordKey; 
+
+            using(var hmac = new HMACSHA512()){
+                passwordKey = hmac.Key; 
+                passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(forgotPasswordRequest.NewPassword));
+            }
+
+            userr.Password = passwordHash;
+            userr.PasswordKey = passwordKey;
+
+            _unitOfWork.UserRepository.Update(userr);
+            _unitOfWork.Complete();
+
+            return true;
+        }
+
         private string CreateJWTAccessToken(string userName, int userId){
-            var secret = _config.GetSection("AppSettings:Key").Value; 
+            var secret = _config.GetSection("AppSettings:Key").Value;
+           
+            //userRoles
+            List<string> userRoles = _unitOfWork.UserRepository.GetUserRolesByUserId(userId);
+
+            //rolePermssions
+            HashSet<string> permissions = new HashSet<string>();
+            foreach(var role in userRoles){
+                _logger.LogInformation("Role: " + role);
+                var roleId = _unitOfWork.UserRepository.GetRoleIdByName(role);
+                var perms = _unitOfWork.UserRepository.GetRolePermissionsByRoleId(roleId);
+                foreach(var perm in perms) permissions.Add(perm);
+            }
+
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-            var claims = new Claim[]{
+            var claims = new List<Claim>{
                 new Claim(ClaimTypes.Name, userName),
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+              
+               //role & permissions
             };
+            
+            // Add roles to claims
+            claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+            claims.AddRange(permissions.Select(perm => new Claim("Permission", perm)));
+            
+
             var signingCred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
             var tokenDescriptor = new SecurityTokenDescriptor {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddMinutes(2),
                 SigningCredentials = signingCred
             };
+            
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);

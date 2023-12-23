@@ -10,17 +10,17 @@ namespace asp_net_web_api.API.Controllers
 {
     public class AuthController : BaseController
     {
-        private readonly IAccountService _accountService;
+        private readonly IAuthService _authService;
          
-        public AuthController(IAccountService accountService)
+        public AuthController(IAuthService authService)
         {
-            _accountService = accountService;
+            _authService = authService;
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequest)
         {
-            var authUser = await _accountService.Login(loginRequest);
+            var authUser = await _authService.Login(loginRequest);
 
             if(authUser==null) return Unauthorized("Invalid credentials");
             
@@ -40,7 +40,7 @@ namespace asp_net_web_api.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(LoginRequestDto loginRequest)
         {
-            var user = await _accountService.Register(loginRequest);
+            var user = await _authService.Register(loginRequest);
             if(user == null) return BadRequest("User already exists");
             return Ok(user);
         }
@@ -50,7 +50,7 @@ namespace asp_net_web_api.API.Controllers
         public async Task<IActionResult> Logout()
         {
             var userAccesstoken = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            var loggedOut = _accountService.Logout(userAccesstoken);
+            var loggedOut = _authService.Logout(userAccesstoken);
             if(!loggedOut) return BadRequest("Already Logged Out");
             return Ok("Logged out succesfully!");
         }
@@ -59,9 +59,17 @@ namespace asp_net_web_api.API.Controllers
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh([FromBody] LoginResponseDto refreshRequest)
         {
-            var response = await _accountService.Refresh(refreshRequest);
+            var response = await _authService.Refresh(refreshRequest);
             if(response == null) return BadRequest("Error while refreshing! AccessToken could be expired");
             return Ok(response);
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto forgotPasswordRequest)
+        {
+            var reset = await _authService.ForgotPassword(forgotPasswordRequest);
+            if(!reset) return BadRequest("Error while updating new password");
+            return Ok("Password Reset Successfull!");
         }
     }
 }

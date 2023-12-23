@@ -32,6 +32,18 @@ namespace asp_net_web_api.API.Middlewares
                     validateJWT(context);
                 }
                 await next(context);
+                
+                if(context.Response.StatusCode == (int)HttpStatusCode.Unauthorized)
+                {
+                    var res = new {StatusCode = 401, Message = "You are Unauthorized!"};
+                    await context.Response.WriteAsync(res.ToString());
+                }
+                if(context.Response.StatusCode == (int)HttpStatusCode.Forbidden)
+                {
+                    var res = new {StatusCode = 403, Message = "Forbidden. You dont have access to this resource!"};
+                    await context.Response.WriteAsync(res.ToString());
+                }
+                
                 LogResponse(context);
             }
             catch (Exception ex){
@@ -50,7 +62,7 @@ namespace asp_net_web_api.API.Middlewares
             }
         }
 
-        private void LogRequest(HttpContext context)
+        private async void LogRequest(HttpContext context)
         {
             var request = context.Request;
             
@@ -60,7 +72,7 @@ namespace asp_net_web_api.API.Middlewares
             requestLog.AppendLine($"Host: {request.Host}");
             requestLog.AppendLine($"Content-Type: {request.ContentType}");
             requestLog.AppendLine($"Content-Length: {request.ContentLength}");
-            
+         
             _logger.LogInformation(requestLog.ToString());
         }
 
