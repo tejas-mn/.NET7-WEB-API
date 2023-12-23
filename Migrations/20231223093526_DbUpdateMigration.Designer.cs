@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using asp_net_web_api.API.Models;
 
@@ -10,9 +11,11 @@ using asp_net_web_api.API.Models;
 namespace asp_net_web_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231223093526_DbUpdateMigration")]
+    partial class DbUpdateMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.13");
@@ -512,6 +515,15 @@ namespace asp_net_web_api.Migrations
                     b.Property<int>("PermissionId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("RoleId", "PermissionId");
 
                     b.HasIndex("PermissionId");
@@ -522,17 +534,20 @@ namespace asp_net_web_api.Migrations
                         new
                         {
                             RoleId = 1,
-                            PermissionId = 1
+                            PermissionId = 1,
+                            Id = 0
                         },
                         new
                         {
                             RoleId = 1,
-                            PermissionId = 2
+                            PermissionId = 2,
+                            Id = 0
                         },
                         new
                         {
                             RoleId = 2,
-                            PermissionId = 2
+                            PermissionId = 2,
+                            Id = 0
                         });
                 });
 
@@ -572,6 +587,15 @@ namespace asp_net_web_api.Migrations
 
                     b.Property<int>("RoleId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("UserId", "RoleId");
 

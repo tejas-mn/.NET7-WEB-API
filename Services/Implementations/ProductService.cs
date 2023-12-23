@@ -8,19 +8,19 @@ using AutoMapper;
 
 namespace asp_net_web_api.API.Services
 {
-    public class InventoryService : IInventoryService
+    public class ProductService : IProductService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public InventoryService(IUnitOfWork unitOfWork, IMapper mapper){
+        public ProductService(IUnitOfWork unitOfWork, IMapper mapper){
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
         public List<ItemDto> getInventoryItems(ProductQueryParameters queryParameters)
         {
-            IQueryable<InventoryItem> inventoryItems = _unitOfWork.ItemsRepository.GetAll(item => item.Category).AsQueryable();
+            IQueryable<Product> inventoryItems = _unitOfWork.ItemsRepository.GetAll(item => item.Category).AsQueryable();
             inventoryItems = handleQuery(inventoryItems, queryParameters);
             List<ItemDto> items = _mapper.Map<List<ItemDto>>(inventoryItems.ToList());
             return items;
@@ -35,13 +35,12 @@ namespace asp_net_web_api.API.Services
 
         public CreateItemResponseDto? addInventoryItem(CreateItemRequestDto itemRequest)
         {
-            var itemExists =  _unitOfWork.ItemsRepository.GetById(itemRequest.Id)!=null;
-            if(itemExists) throw new Exception($"Item {itemRequest.Id} already exists");
-
-            var categoryNotFound = _unitOfWork.CategoryRepository.GetById(itemRequest.CategoryId)==null;
-            if(categoryNotFound) throw new CategoryNotFoundException($"Category {itemRequest.CategoryId} Not found");
-
-            InventoryItem item = _mapper.Map<InventoryItem>(itemRequest);
+            var validator = new CreateItemRequestValidator(_unitOfWork);
+            var validationResult = validator.ValidateAndThrow(itemRequest);
+            
+            if (!validationResult.IsValid) throw new Exception("One or More Valdations failed");
+            
+            Product item = _mapper.Map<Product>(itemRequest);
             item.CreatedAt=item.ModifiedAt=DateTime.Now;
 
             _unitOfWork.ItemsRepository.Add(item);
@@ -53,9 +52,9 @@ namespace asp_net_web_api.API.Services
             return response;
         }
         
-        public  InventoryItem? deleteInventoryItem(int id)
+        public  Product? deleteInventoryItem(int id)
         {
-            InventoryItem? item = _unitOfWork.ItemsRepository.GetById(id);
+            Product? item = _unitOfWork.ItemsRepository.GetById(id);
             if(item == null) throw new ItemNotFoundException($"Requested Item {id} Not Found");
             _unitOfWork.ItemsRepository.Delete(item);
             _unitOfWork.Complete();
@@ -74,6 +73,7 @@ namespace asp_net_web_api.API.Services
 
             _mapper.Map(itemRequest, itemToUpdate , opts=>{
                 opts.BeforeMap((src, dst)=>{
+                    
                     dst.ModifiedAt = DateTime.Now;
                 });
             });
@@ -87,7 +87,7 @@ namespace asp_net_web_api.API.Services
             return responseItemDto;
         }
 
-        private static IQueryable<InventoryItem> handleQuery(IQueryable<InventoryItem> inventoryItems, ProductQueryParameters queryParameters)
+        private static IQueryable<Product> handleQuery(IQueryable<Product> inventoryItems, ProductQueryParameters queryParameters)
         {
             if(queryParameters.MinPrice != null){
                 inventoryItems = inventoryItems.Where(p => p.Price >= queryParameters.MinPrice);
@@ -114,7 +114,7 @@ namespace asp_net_web_api.API.Services
             }
 
             if(!string.IsNullOrEmpty(queryParameters.SortBy)){
-                if (typeof(InventoryItem).GetProperty(queryParameters.SortBy) != null)
+                if (typeof(Product).GetProperty(queryParameters.SortBy) != null)
                 {
                     inventoryItems = inventoryItems.OrderByCustom(
                         queryParameters.SortBy,

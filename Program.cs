@@ -25,8 +25,9 @@ builder.Services.AddLogging(options => {
 builder.Services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddTransient<IItemRepository, ItemRepository>();
 builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
-builder.Services.AddTransient<IInventoryService, InventoryService>();
-builder.Services.AddTransient<IAccountService, AccountService>();
+builder.Services.AddTransient<IProductService, ProductService>();
+builder.Services.AddTransient<ICategoryService, CategoryService>();
+builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddTransient<ExceptionHandlingMiddleware>();
 builder.Services.AddSingleton<TokenStoreCache>();
@@ -72,6 +73,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
+});
+
+builder.Services.AddAuthorization( options => {
+     //options.AddPolicy("admin", policy => policy.RequireRole("Admin"))
+    options.AddPolicy("RequireReadPermission", policy => policy.RequireClaim("Permission", "Read"));
+    options.AddPolicy("RequireWritePermission", policy => policy.RequireClaim("Permission", "Write"));
+    // Add other policies as needed
 });
 
 var app = builder.Build();

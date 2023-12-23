@@ -3,12 +3,12 @@ using asp_net_web_api.API.Models;
 
 namespace asp_net_web_api.API.Services
 {
-    public interface IAccountService
+    public interface IAuthService
     {
-        public Dictionary<string, string>? TokenStore {get;}
         public bool Logout(string userAccesstoken);
         public Task<LoginResponseDto?> Login(LoginRequestDto loginRequest);
         public Task<LoginResponseDto?> Refresh(LoginResponseDto refreshRequest);
         public Task<UserDto?> Register(LoginRequestDto loginReq);
+        public Task<bool> ForgotPassword(ForgotPasswordRequestDto forgotPasswordRequest);
     }
 }
