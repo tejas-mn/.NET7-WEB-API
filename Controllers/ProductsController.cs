@@ -25,9 +25,10 @@ namespace asp_net_web_api.API.Controllers
         [Authorize(Roles = "Admin,User", Policy = "RequireReadPermission")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<ItemDto>))]
-        public IActionResult GetInventoryItems([FromQuery] ProductQueryParameters queryParameters)
-        {
-            var inventoryItems = _productService.getInventoryItems(queryParameters);
+        public async Task<IActionResult> GetInventoryItems([FromQuery] ProductQueryParameters queryParameters)
+        {        
+            if(!ModelState.IsValid) return BadRequest(ModelState);
+            var inventoryItems = await _productService.getInventoryItems(queryParameters);
             return Ok(inventoryItems);
         }
 
@@ -45,20 +46,22 @@ namespace asp_net_web_api.API.Controllers
         [Authorize(Roles = "Admin", Policy = "RequireWritePermission")]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CreateItemResponseDto))]
-        public  ActionResult<CreateItemResponseDto> AddInventoryItem(CreateItemRequestDto itemRequest)
+        public  async Task<ActionResult<CreateItemResponseDto>> AddInventoryItem(CreateItemRequestDto itemRequest)
         {
+            if(!ModelState.IsValid) return BadRequest(ModelState);
             if (itemRequest.Id==0) return BadRequest("Id 0 not allowed.");
-            var newItem = _productService.addInventoryItem(itemRequest);
+            var newItem = await _productService.addInventoryItem(itemRequest);
             return Ok(newItem);
         }
 
         [Authorize(Roles = "Admin", Policy = "RequireWritePermission")]
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(object))]
-        public IActionResult DeleteInventoryItem(int id)
-        {
+        public async Task<IActionResult> DeleteInventoryItem(int id)
+        {            
+            if(!ModelState.IsValid) return BadRequest(ModelState);
             if(id==0) return BadRequest("Id 0 not allowed.");
-            var item = _productService.deleteInventoryItem(id);
+            var item = await _productService.deleteInventoryItem(id);
             return Ok($"Item {id} deleted");
         }
 
@@ -67,9 +70,11 @@ namespace asp_net_web_api.API.Controllers
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ItemDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ItemDto))]
-        public ActionResult<ItemDto> UpdateInventoryItem(int id, CreateItemRequestDto itemRequest){
+        public async Task<ActionResult<ItemDto>> UpdateInventoryItem(int id, CreateItemRequestDto itemRequest)
+        {            
+            if(!ModelState.IsValid) return BadRequest(ModelState);
             if (id != itemRequest.Id || itemRequest.Id==0) return BadRequest($"Wrong item id {itemRequest.Id} in request and url");
-            var updatedItemDto =  _productService.updateInventoryItem(id, itemRequest); 
+            var updatedItemDto =  await _productService.updateInventoryItem(id, itemRequest); 
             return Ok(updatedItemDto);
         }
     }

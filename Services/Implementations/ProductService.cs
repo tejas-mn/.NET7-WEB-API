@@ -18,10 +18,10 @@ namespace asp_net_web_api.API.Services
             _mapper = mapper;
         }
 
-        public List<ItemDto> getInventoryItems(ProductQueryParameters queryParameters)
+        public async Task<List<ItemDto>> getInventoryItems(ProductQueryParameters queryParameters)
         {
-            IQueryable<Product> inventoryItems = _unitOfWork.ItemsRepository.GetAll(item => item.Category).AsQueryable();
-            inventoryItems = handleQuery(inventoryItems, queryParameters);
+            IEnumerable<Product> inventoryItems = await _unitOfWork.ItemsRepository.GetAll(item => item.Category);
+            inventoryItems = handleQuery(inventoryItems.AsQueryable(), queryParameters);
             List<ItemDto> items = _mapper.Map<List<ItemDto>>(inventoryItems.ToList());
             return items;
         }
@@ -33,7 +33,7 @@ namespace asp_net_web_api.API.Services
             return _mapper.Map<ItemDto?>(inventoryItem);
         }
 
-        public CreateItemResponseDto? addInventoryItem(CreateItemRequestDto itemRequest)
+        public async Task<CreateItemResponseDto?> addInventoryItem(CreateItemRequestDto itemRequest)
         {
             var validator = new CreateItemRequestValidator(_unitOfWork);
             var validationResult = validator.ValidateAndThrow(itemRequest);
@@ -44,7 +44,7 @@ namespace asp_net_web_api.API.Services
             item.CreatedAt=item.ModifiedAt=DateTime.Now;
 
             _unitOfWork.ItemsRepository.Add(item);
-            _unitOfWork.Complete();
+            await _unitOfWork.SaveAsync();
  
             var addedItem = _unitOfWork.ItemsRepository.GetById(itemRequest.Id);
             var response = _mapper.Map<CreateItemResponseDto>(addedItem);
@@ -52,16 +52,16 @@ namespace asp_net_web_api.API.Services
             return response;
         }
         
-        public  Product? deleteInventoryItem(int id)
+        public  async Task<Product?> deleteInventoryItem(int id)
         {
             Product? item = _unitOfWork.ItemsRepository.GetById(id);
             if(item == null) throw new ItemNotFoundException($"Requested Item {id} Not Found");
             _unitOfWork.ItemsRepository.Delete(item);
-            _unitOfWork.Complete();
+            await _unitOfWork.SaveAsync();
             return item;
         }
 
-        public  ItemDto? updateInventoryItem(int id, CreateItemRequestDto itemRequest)
+        public async Task<ItemDto?> updateInventoryItem(int id, CreateItemRequestDto itemRequest)
         {
             if (id != itemRequest.Id) return null;
             
@@ -73,13 +73,12 @@ namespace asp_net_web_api.API.Services
 
             _mapper.Map(itemRequest, itemToUpdate , opts=>{
                 opts.BeforeMap((src, dst)=>{
-                    
                     dst.ModifiedAt = DateTime.Now;
                 });
             });
 
             _unitOfWork.ItemsRepository.Update(itemToUpdate);
-            _unitOfWork.Complete();
+            await _unitOfWork.SaveAsync();
 
             var updatedItem = getInventoryItem(itemRequest.Id);
             var responseItemDto = _mapper.Map<ItemDto>(updatedItem);

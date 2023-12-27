@@ -10,5 +10,8 @@ namespace asp_net_web_api.API.Respository {
         public List<string> GetUserRolesByUserId(int userId);
         public List<string> GetRolePermissionsByRoleId(int roleId);
         public int GetRoleIdByName(string role);
+        public Task<List<Role>> GetAllRoles();
+        public Task AssignUserRoles(int userId, List<int> roleIds);
+        public Task RemoveUserRoles(int userId, List<int> roleIds);
     }
 }

@@ -22,7 +22,6 @@ namespace asp_net_web_api.API.Mappings
 
             CreateMap<Product, CreateItemResponseDto>();
 
-
         }
     }
 }

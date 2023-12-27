@@ -47,7 +47,7 @@ namespace asp_net_web_api.API.Middlewares
                 LogResponse(context);
             }
             catch (Exception ex){
-                // _logger.LogError(ex, ex.Message);
+                 _logger.LogError(ex, ex.Message);
 
                 if(ex.InnerException!=null) _logger.LogError("Inner Exception: " + ex.InnerException.Message.Substring(18, 24));
 

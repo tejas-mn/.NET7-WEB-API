@@ -14,11 +14,11 @@ namespace asp_net_web_api.API.Respository
             _context = context;
         }
 
-        public IEnumerable<T> GetAll(){
-            return _context.Set<T>().ToList();
+        public async Task<IEnumerable<T>> GetAll(){
+            return await _context.Set<T>().AsNoTracking<T>().ToListAsync();
         }
 
-       public IEnumerable<T> GetAll(params Expression<Func<T, object>>[] includes){
+       public async Task<IEnumerable<T>> GetAll(params Expression<Func<T, object>>[] includes){
             IQueryable<T> query = Table; 
 
             if(includes != null)
@@ -26,7 +26,7 @@ namespace asp_net_web_api.API.Respository
                 query = includes.Aggregate(query, (currentQuery, include) => currentQuery.Include(include));
             }
 
-            return query.ToList();
+            return await query.ToListAsync();
         }
 
         public T? GetById(int id) {
@@ -53,14 +53,14 @@ namespace asp_net_web_api.API.Respository
         }
 
 
-        public void Add(T entity) {
+        public async void Add(T entity) {
             try  
             {  
                 if(entity == null)  
                 {  
                     throw new ArgumentNullException(nameof(entity));  
                 }  
-                _context.Set<T>().Add(entity);
+                await _context.Set<T>().AddAsync(entity);
             }  
             catch (DbUpdateException  dbEx)  
             {  
@@ -78,14 +78,32 @@ namespace asp_net_web_api.API.Respository
                 {  
                     throw new ArgumentNullException(nameof(entity));  
                 }  
-                // _context.Set<T>().Update(entity);
-                _context.Entry(entity).State = EntityState.Modified;
+                // int id = (int)entity.GetType().GetProperty("Id").GetValue(entity);
+                // var oldobj = _context.Set<T>().Find(id);
+                // var UpdatedObj = CheckUpdateObject<T>(oldobj, entity);
+                // _context.Entry(oldobj).CurrentValues.SetValues(UpdatedObj);
+
+                _context.Set<T>().Update(entity);
+                // _context.Entry(entity).State = EntityState.Modified;
             }  
             catch (DbUpdateException  dbEx)  
             {  
                 var fail = new Exception(dbEx.Message, dbEx);                  
                 throw fail;  
             }  
+        }
+
+        public  T CheckUpdateObject<T>(T originalObj, T updateObj)
+        {
+            foreach (var property in updateObj.GetType().GetProperties())
+            {
+                if (property.GetValue(updateObj) == null)
+                {
+                    //property.SetValue(updateObj,originalObj.GetType().GetProperty(property.Name).GetValue(originalObj, null));
+                    _context.Entry(updateObj).Property(property.Name).IsModified = false;
+                }
+            }
+            return updateObj;
         }
 
         public void UpdateColumns(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> updateFactory)
@@ -129,7 +147,7 @@ namespace asp_net_web_api.API.Respository
         }
 
         public IEnumerable<T> Find(Expression<Func<T, bool>> expression) {
-            return _context.Set<T>().Where(expression);
+            return _context.Set<T>().AsNoTracking().Where(expression);
         }
 
         public void RemoveRange(IEnumerable<T> entities) {

@@ -6,8 +6,8 @@ namespace asp_net_web_api.API.Respository
     {
         IQueryable<T> Table { get; }  
 
-        IEnumerable<T> GetAll();
-        public IEnumerable<T> GetAll(params Expression<Func<T, object>>[] includes);
+        public Task<IEnumerable<T>> GetAll();
+        public Task<IEnumerable<T>> GetAll(params Expression<Func<T, object>>[] includes);
         T? GetById(int id);
         public T? GetById(int id, params Expression<Func<T, object>>[] includes);
         void Add(T entity);

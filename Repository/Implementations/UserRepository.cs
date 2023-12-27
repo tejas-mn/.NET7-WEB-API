@@ -78,5 +78,24 @@ namespace asp_net_web_api.API.Respository
         public int GetRoleIdByName(string role){
             return _dbContext.Roles.Where(t => t.Name == role).Select(t=>t.Id).First();
         }
+
+        public async Task<List<Role>> GetAllRoles(){
+          return await _dbContext.Roles.ToListAsync();
+        }
+
+        public async Task AssignUserRoles(int userId, List<int> roleIds){
+            foreach(var roleId in roleIds){
+                await _dbContext.UserRoles.AddAsync(new UserRole{RoleId = roleId, UserId = userId});
+            }
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task RemoveUserRoles(int userId, List<int> roleIds){
+            foreach(var roleId in roleIds){
+                var t = await _dbContext.UserRoles.FindAsync(userId,roleId);
+                _dbContext.UserRoles.Remove(t);
+            }
+            await _dbContext.SaveChangesAsync();
+        }
     }
 }

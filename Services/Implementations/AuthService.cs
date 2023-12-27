@@ -35,7 +35,7 @@ namespace asp_net_web_api.API.Services
                 RefreshToken = CreateRefreshToken()
             };
             if (!_tokenStore.Store.ContainsKey(loginResponse.AccessToken)){
-                _tokenStore.Store.Add(loginResponse.AccessToken, loginResponse.RefreshToken);
+                _tokenStore.Store.TryAdd(loginResponse.AccessToken, loginResponse.RefreshToken);
             }
             return loginResponse;
         }
@@ -51,7 +51,7 @@ namespace asp_net_web_api.API.Services
             };
         }
 
-        public async Task<bool> ForgotPassword(ForgotPasswordRequestDto forgotPasswordRequest){
+        public  bool ForgotPassword(ForgotPasswordRequestDto forgotPasswordRequest){
             // var user = await _unitOfWork.UserRepository.UserAlreadyExists(forgotPasswordRequest.Name);
             var userr = _unitOfWork.UserRepository.Find(u => u.Name == forgotPasswordRequest.Name).FirstOrDefault();
             if(userr==null) throw new Exception("User Not Found");
@@ -90,12 +90,9 @@ namespace asp_net_web_api.API.Services
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var claims = new List<Claim>{
                 new Claim(ClaimTypes.Name, userName),
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-              
-               //role & permissions
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
             };
-            
-            // Add roles to claims
+
             claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
             claims.AddRange(permissions.Select(perm => new Claim("Permission", perm)));
             
@@ -121,7 +118,7 @@ namespace asp_net_web_api.API.Services
             if(!_tokenStore.Store.ContainsKey(userAccesstoken)){
                 return false;
             }
-            _tokenStore.Store.Remove(userAccesstoken);
+            _tokenStore.Store.TryRemove(userAccesstoken, out _);
             return true;
         }
 
@@ -155,8 +152,8 @@ namespace asp_net_web_api.API.Services
                 if(!userExists) return null;
             
                 var newAccessToken = CreateJWTAccessToken(refreshRequest.Name, refreshRequest.Id);
-                _tokenStore.Store.Add(newAccessToken, storedRefreshToken);
-                _tokenStore.Store.Remove(refreshRequest.AccessToken);
+                _tokenStore.Store.TryAdd(newAccessToken, storedRefreshToken);
+                _tokenStore.Store.TryRemove(refreshRequest.AccessToken, out _);
                 return new LoginResponseDto(){
                     Id = refreshRequest.Id,
                     Name = refreshRequest.Name, 
@@ -166,6 +163,46 @@ namespace asp_net_web_api.API.Services
             }
 
             return null;
+        }
+    
+        public async Task<List<UserDto>> getUsers()
+        {
+            List<UserDto> result = new List<UserDto>();    
+
+            IEnumerable<User> users = await _unitOfWork.UserRepository.GetAll();
+            
+            foreach(var user in users)
+            {
+                List<string> userRoles = _unitOfWork.UserRepository.GetUserRolesByUserId(user.Id);
+                HashSet<string> permissions = new HashSet<string>();
+                foreach(var role in userRoles){
+                    var roleId = _unitOfWork.UserRepository.GetRoleIdByName(role);
+                    var perms = _unitOfWork.UserRepository.GetRolePermissionsByRoleId(roleId);
+                    foreach(var perm in perms) permissions.Add(perm);
+                }
+                UserDto temp = new UserDto(){
+                    Id = user.Id,
+                    Name = user.Name,
+                    Roles = userRoles,
+                    Permissions = permissions,
+                    CreatedAt = user.CreatedAt
+                };
+                result.Add(temp);
+            }
+            
+            return result;
+        }
+    
+        public async Task<List<Role>> getRoles(){
+            return await _unitOfWork.UserRepository.GetAllRoles();
+        }
+
+        public async Task assignUserRoles(int userId, List<int> roleIds){
+            await _unitOfWork.UserRepository.AssignUserRoles(userId, roleIds);
+        }
+
+        public async Task removeUserRoles(int userId, List<int> roleIds){
+            await _unitOfWork.UserRepository.RemoveUserRoles(userId, roleIds);
         }
     }
 }
