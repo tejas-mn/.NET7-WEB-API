@@ -1,9 +1,6 @@
 using asp_net_web_api.API.DTO;
-using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
-using asp_net_web_api.API.Utility;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace asp_net_web_api.API.Controllers
@@ -68,10 +65,10 @@ namespace asp_net_web_api.API.Controllers
         }
 
         [HttpPost("forgot-password")]
-        public IActionResult ForgotPassword([FromBody] ForgotPasswordRequestDto forgotPasswordRequest)
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto forgotPasswordRequest)
         {
             if(!ModelState.IsValid) return BadRequest(ModelState);
-            var reset =  _authService.ForgotPassword(forgotPasswordRequest);
+            var reset =  await _authService.ForgotPassword(forgotPasswordRequest);
             if(!reset) return BadRequest("Error while updating new password");
             return Ok("Password Reset Successfull!");
         }

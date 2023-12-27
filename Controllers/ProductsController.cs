@@ -1,9 +1,7 @@
 using asp_net_web_api.API.DTO;
-using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using asp_net_web_api.API.Utility;
 
 namespace asp_net_web_api.API.Controllers
 {

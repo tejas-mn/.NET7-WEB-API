@@ -1,7 +1,6 @@
 using asp_net_web_api.API.DTO;
 using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Respository;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
@@ -51,7 +50,7 @@ namespace asp_net_web_api.API.Services
             };
         }
 
-        public  bool ForgotPassword(ForgotPasswordRequestDto forgotPasswordRequest){
+        public async Task<bool> ForgotPassword(ForgotPasswordRequestDto forgotPasswordRequest){
             // var user = await _unitOfWork.UserRepository.UserAlreadyExists(forgotPasswordRequest.Name);
             var userr = _unitOfWork.UserRepository.Find(u => u.Name == forgotPasswordRequest.Name).FirstOrDefault();
             if(userr==null) throw new Exception("User Not Found");
@@ -67,9 +66,7 @@ namespace asp_net_web_api.API.Services
             userr.PasswordKey = passwordKey;
 
             _unitOfWork.UserRepository.Update(userr);
-            _unitOfWork.Complete();
-
-            return true;
+            return await _unitOfWork.SaveAsync();
         }
 
         private string CreateJWTAccessToken(string userName, int userId){
