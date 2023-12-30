@@ -78,12 +78,12 @@ namespace asp_net_web_api.API.Respository
                 {  
                     throw new ArgumentNullException(nameof(entity));  
                 }  
-                // int id = (int)entity.GetType().GetProperty("Id").GetValue(entity);
-                // var oldobj = _context.Set<T>().Find(id);
-                // var UpdatedObj = CheckUpdateObject<T>(oldobj, entity);
-                // _context.Entry(oldobj).CurrentValues.SetValues(UpdatedObj);
-
-                _context.Set<T>().Update(entity);
+                int id = (int)entity.GetType().GetProperty("Id").GetValue(entity);
+                var oldobj = _context.Set<T>().Find(id);
+                var UpdatedObj = CheckUpdateObject<T>(oldobj, entity);
+                _context.Entry(oldobj).CurrentValues.SetValues(UpdatedObj);
+              
+                // _context.Set<T>().Update(entity);
                 // _context.Entry(entity).State = EntityState.Modified;
             }  
             catch (DbUpdateException  dbEx)  

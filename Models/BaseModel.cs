@@ -6,7 +6,6 @@ namespace asp_net_web_api.API.Models
     public class BaseModel
     {
         [Required]
-        [Key]
         public int Id { get; set; }
         
         public DateTime? CreatedAt { get; set; }

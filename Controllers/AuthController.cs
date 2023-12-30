@@ -72,5 +72,10 @@ namespace asp_net_web_api.API.Controllers
             if(!reset) return BadRequest("Error while updating new password");
             return Ok("Password Reset Successfull!");
         }
+
+        [HttpGet("health-check")]
+        public IActionResult Check(){
+            return Ok("Working..");
+        }
     }
 }

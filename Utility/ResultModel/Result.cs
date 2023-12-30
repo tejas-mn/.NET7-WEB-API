@@ -5,7 +5,7 @@ public class Result<T>
     public T Data { get; private set; }
     public string ErrorMessage { get; private set; }
 
-    private Result() { }
+    public Result() { }
 
     public static Result<T> SuccessResponse(T data)
     {

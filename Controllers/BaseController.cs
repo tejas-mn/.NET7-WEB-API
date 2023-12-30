@@ -7,6 +7,6 @@ namespace asp_net_web_api.API.Controllers
     [ApiController]
     public class BaseController : ControllerBase
     {
-
+        
     }
 }

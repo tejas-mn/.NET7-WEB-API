@@ -97,7 +97,7 @@ namespace asp_net_web_api.API.Services
             var signingCred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
             var tokenDescriptor = new SecurityTokenDescriptor {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(2),
+                Expires = DateTime.UtcNow.AddMinutes(10),
                 SigningCredentials = signingCred
             };
             

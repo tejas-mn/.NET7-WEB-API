@@ -7,7 +7,6 @@ namespace asp_net_web_api.API.DTO
     {
         public int Id {get; set;}
 
-        [Required]
         public required string Name {get; set;}
 
         public List<string>? Roles {get;set;}
