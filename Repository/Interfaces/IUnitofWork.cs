@@ -8,6 +8,7 @@ namespace asp_net_web_api.API.Respository{
         IUserRepository UserRepository { get; }
         int Complete();
         public IUnitOfWork Create();
+        public Task<bool> SaveAsync();
 
     }
 }

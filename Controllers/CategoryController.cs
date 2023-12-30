@@ -1,10 +1,7 @@
 using asp_net_web_api.API.DTO;
-using asp_net_web_api.API.Models;
 using asp_net_web_api.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using asp_net_web_api.API.Utility;
-using System.Net;
 
 namespace asp_net_web_api.API.Controllers
 {
@@ -18,9 +15,10 @@ namespace asp_net_web_api.API.Controllers
         [Authorize(Roles = "Admin,User", Policy = "RequireReadPermission")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<CategoryDto>))]
-        public IActionResult GetCategories([FromQuery] ProductQueryParameters queryParameters)
+        public async Task<IActionResult> GetCategories([FromQuery] ProductQueryParameters queryParameters)
         {
-            var categories = _categoryService.getCategories(queryParameters);
+            if(!ModelState.IsValid) return BadRequest(ModelState);
+            var categories = await _categoryService.getCategories(queryParameters);
             return Ok(categories);
         }
 
@@ -37,9 +35,10 @@ namespace asp_net_web_api.API.Controllers
         [Authorize(Roles = "Admin", Policy = "RequireWritePermission")]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CategoryDto))]
-        public  ActionResult<CategoryDto> AddCategory(CategoryDto categoryAddRequest)
+        public async Task<ActionResult<CategoryDto>> AddCategory(CategoryDto categoryAddRequest)
         {
-            var categorydto = _categoryService.addCategory(categoryAddRequest);
+            if(!ModelState.IsValid) return BadRequest(ModelState);
+            var categorydto = await _categoryService.addCategory(categoryAddRequest);
             return Ok(categorydto);
         }
 
@@ -48,9 +47,10 @@ namespace asp_net_web_api.API.Controllers
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(CategoryDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(CategoryDto))]
-        public ActionResult<CategoryDto> UpdateCategory(int id, CategoryDto categoryUpdateRequest)
+        public async Task<ActionResult<CategoryDto>> UpdateCategory(int id, CategoryDto categoryUpdateRequest)
         {
-            var categorydto = _categoryService.updateCategory(id, categoryUpdateRequest);
+            if(!ModelState.IsValid) return BadRequest(ModelState);
+            var categorydto = await _categoryService.updateCategory(id, categoryUpdateRequest);
             return Ok(categorydto);
         }
     }

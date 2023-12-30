@@ -26,7 +26,9 @@ namespace asp_net_web_api.API.Middlewares
             LogRequest(context);
         
             try{
-                if(context.Request.Path.ToString().Contains("api/Inventory")){
+                var checkEndpoints = new[]{"api/Products", "api/Auth/logout", "api/Auth/refresh", "api/Categories", "api/AuthManager"};
+                
+                if(checkEndpoints.Any(p => context.Request.Path.ToString().Contains(p))){
                     var userAccesstoken = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
                     if (!cc.Store.ContainsKey(userAccesstoken)) throw new UnauthorizedAccessException("Already Logged out or invalid jwt exception");
                     validateJWT(context);
@@ -47,7 +49,7 @@ namespace asp_net_web_api.API.Middlewares
                 LogResponse(context);
             }
             catch (Exception ex){
-                // _logger.LogError(ex, ex.Message);
+                 _logger.LogError(ex, ex.Message);
 
                 if(ex.InnerException!=null) _logger.LogError("Inner Exception: " + ex.InnerException.Message.Substring(18, 24));
 

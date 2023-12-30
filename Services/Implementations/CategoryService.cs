@@ -18,9 +18,9 @@ namespace asp_net_web_api.API.Services
             _mapper = mapper;
         }
 
-        public List<CategoryDto> getCategories(ProductQueryParameters queryParameters)
+        public async Task<List<CategoryDto>> getCategories(ProductQueryParameters queryParameters)
         {
-            List<Category> inventoryItems = (List<Category>)_unitOfWork.CategoryRepository.GetAll();
+            IEnumerable<Category> inventoryItems = await _unitOfWork.CategoryRepository.GetAll();
             List<CategoryDto> items = _mapper.Map<List<CategoryDto>>(inventoryItems.ToList());
             return items;
         }
@@ -33,22 +33,22 @@ namespace asp_net_web_api.API.Services
             return categoryDto;
         }
 
-        public CategoryDto? addCategory(CategoryDto categoryRequest)
+        public async Task<CategoryDto?> addCategory(CategoryDto categoryRequest)
         {
             var category = _mapper.Map<Category>(categoryRequest);
             _unitOfWork.CategoryRepository.Add(category);
-            _unitOfWork.Complete();
+            await _unitOfWork.SaveAsync();
             var categoryDto = _mapper.Map<CategoryDto>(category);
             return categoryDto;
         }
 
-        public  CategoryDto? updateCategory(int id, CategoryDto categoryRequest)
+        public async Task<CategoryDto?> updateCategory(int id, CategoryDto categoryRequest)
         {
             var category = _unitOfWork.CategoryRepository.GetById(id);
             if(category==null) throw new CategoryNotFoundException($"category {id} not found!");
             category = _mapper.Map<Category>(categoryRequest);
             _unitOfWork.CategoryRepository.Update(category);
-            _unitOfWork.Complete();
+            await _unitOfWork.SaveAsync();
             var categoryDto = _mapper.Map<CategoryDto>(category);
             return categoryDto;
         }
