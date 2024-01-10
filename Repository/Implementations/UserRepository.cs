@@ -85,6 +85,8 @@ namespace asp_net_web_api.API.Respository
 
         public async Task AssignUserRoles(int userId, List<int> roleIds){
             foreach(var roleId in roleIds){
+                var t = await _dbContext.UserRoles.FindAsync(userId,roleId);
+                if(t!=null) throw new Exception($"Role {roleId} is already assigned to user {userId}");
                 await _dbContext.UserRoles.AddAsync(new UserRole{RoleId = roleId, UserId = userId});
             }
             await _dbContext.SaveChangesAsync();
